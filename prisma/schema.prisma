@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Job {
+  id Int @id @default(autoincrement())
+
+  // 원본 플랫폼
+  source     String
+  sourceUrl  String?
+  externalId String?
+
+  // 기본 공고 정보
+  title    String
+  category String
+
+  // 금액
+  budgetMin Int
+  budgetMax Int
+
+  // 작업 방식
+  workType String
+
+  // 예상 작업시간
+  estimatedHoursMin Int
+  estimatedHoursMax Int
+
+  // 기술 / 업무 태그
+  tags String[]
+
+  // 외주레이더 분석용
+  summary String
+
+  // 실제 공고 일정
+  deadline   DateTime?
+  publishedAt DateTime?
+
+  // 상태
+  isActive Boolean @default(true)
+
+  // 등록 / 수정시간
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([source])
+  @@index([isActive])
+  @@map("jobs")
+}
