@@ -2,38 +2,137 @@
 
 import Link from "next/link";
 import {
-  FormEvent,
   useEffect,
   useMemo,
   useState,
+  type FormEvent,
 } from "react";
+
 import type { Job } from "@/types/job";
+
 import {
   calculateJobMatch,
+  type MatchResult,
   type RadarProfile,
 } from "@/lib/matching";
 
+type HomeClientProps = {
+  jobs: Job[];
+};
+
+type JobWithMatch = Job & {
+  match: MatchResult | null;
+};
 
 const BUDGET_OPTIONS = [
-  { label: "금액 전체", value: 0 },
-  { label: "10만원 이상", value: 100000 },
-  { label: "30만원 이상", value: 300000 },
-  { label: "50만원 이상", value: 500000 },
-  { label: "100만원 이상", value: 1000000 },
+  {
+    value: 0,
+    label: "전체 예산",
+  },
+  {
+    value: 100000,
+    label: "10만원 이상",
+  },
+  {
+    value: 300000,
+    label: "30만원 이상",
+  },
+  {
+    value: 500000,
+    label: "50만원 이상",
+  },
+  {
+    value: 1000000,
+    label: "100만원 이상",
+  },
 ];
+
+function getDeadlineInfo(
+  deadline: string | null
+) {
+  if (!deadline) {
+    return null;
+  }
+
+  const now = new Date();
+  const end = new Date(deadline);
+
+  if (Number.isNaN(end.getTime())) {
+    return null;
+  }
+
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const endDay = new Date(
+    end.getFullYear(),
+    end.getMonth(),
+    end.getDate()
+  );
+
+  const diffDays = Math.ceil(
+    (endDay.getTime() - today.getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays < 0) {
+    return {
+      label: "마감",
+      expired: true,
+    };
+  }
+
+  if (diffDays === 0) {
+    return {
+      label: "오늘 마감",
+      expired: false,
+    };
+  }
+
+  return {
+    label: `D-${diffDays}`,
+    expired: false,
+  };
+}
+
+function getScoreStyle(score: number) {
+  if (score >= 80) {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-300";
+  }
+
+  if (score >= 60) {
+    return "border-blue-500/30 bg-blue-500/10 text-blue-300";
+  }
+
+  return "border-slate-600 bg-slate-800 text-slate-300";
+}
 
 export default function HomeClient({
   jobs,
-}: {
-  jobs: Job[];
-}) {
-
-   const categoryOptions = useMemo(
+}: HomeClientProps) {
+  const categoryOptions = useMemo(
     () => [
       "전체",
       ...Array.from(
         new Set(
           jobs.map((job) => job.category)
+        )
+      ),
+    ],
+    [jobs]
+  );
+
+  const workTypeOptions = useMemo(
+    () => [
+      "전체",
+      ...Array.from(
+        new Set(
+          jobs
+            .map((job) => job.workType)
+            .filter(Boolean)
         )
       ),
     ],
@@ -64,562 +163,564 @@ export default function HomeClient({
    * 저장된 내 레이더 설정 불러오기
    */
   useEffect(() => {
-    const savedProfile =
-      localStorage.getItem("ojuradar-profile");
+    const timer = window.setTimeout(() => {
+      try {
+        const savedProfile =
+          window.localStorage.getItem(
+            "ojuradar-profile"
+          );
 
-    if (!savedProfile) {
-      return;
-    }
+        if (!savedProfile) {
+          return;
+        }
 
-    try {
-      const parsedProfile: RadarProfile =
-        JSON.parse(savedProfile);
+        const parsed =
+          JSON.parse(savedProfile) as RadarProfile;
 
-      setTimeout(() => {
-        setProfile(parsedProfile);
-      }, 0);
-    } catch {
-      console.error(
-        "레이더 설정을 불러올 수 없습니다."
-      );
-    }
+        setProfile(parsed);
+      } catch (error) {
+        console.error(
+          "레이더 설정을 불러오지 못했습니다.",
+          error
+        );
+      }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, []);
 
   /*
-   * --------------------------------------------------
-   * 공고 점수 계산 + 검색 + 필터 + 정렬
-   * --------------------------------------------------
+   * DB 공고 + 레이더 매칭
    */
-  const filteredJobs = useMemo(() => {
-    const keyword =
-      searchKeyword.trim().toLowerCase();
-
-    return jobs
-      .map((job) => ({
+  const analyzedJobs =
+    useMemo<JobWithMatch[]>(() => {
+      return jobs.map((job) => ({
         ...job,
-
         match: profile
           ? calculateJobMatch(job, profile)
           : null,
-      }))
+      }));
+    }, [jobs, profile]);
+
+  /*
+   * 검색 / 필터 / 정렬
+   */
+  const visibleJobs = useMemo(() => {
+    const keyword =
+      searchKeyword.trim().toLowerCase();
+
+    return analyzedJobs
       .filter((job) => {
-        /*
-         * 검색어
-         */
+        if (!keyword) {
+          return true;
+        }
+
         const searchableText = [
           job.title,
           job.category,
           job.source,
+          job.summary,
+          job.workType,
           ...job.tags,
         ]
           .join(" ")
           .toLowerCase();
 
-        const keywordMatched =
-          keyword === "" ||
-          searchableText.includes(keyword);
-
-        /*
-         * 분야
-         */
-        const categoryMatched =
-          category === "전체" ||
-          job.category === category;
-
-        /*
-         * 작업방식
-         */
-        const workTypeMatched =
-          workType === "전체" ||
-          job.workType === workType;
-
-        /*
-         * 최소금액
-         */
-        const budgetMatched =
-          job.budgetMax >= minimumBudget;
-
-        return (
-          keywordMatched &&
-          categoryMatched &&
-          workTypeMatched &&
-          budgetMatched
+        return searchableText.includes(
+          keyword
         );
       })
-      .sort(
-        (a, b) =>
-          (b.match?.score ?? b.score) -
-          (a.match?.score ?? a.score)
-      );
+      .filter((job) => {
+        if (category === "전체") {
+          return true;
+        }
+
+        return job.category === category;
+      })
+      .filter((job) => {
+        if (workType === "전체") {
+          return true;
+        }
+
+        return job.workType === workType;
+      })
+      .filter((job) => {
+        if (minimumBudget === 0) {
+          return true;
+        }
+
+        return (
+          job.budgetMax >= minimumBudget
+        );
+      })
+      .sort((a, b) => {
+        const scoreA =
+          a.match?.score ?? a.score;
+
+        const scoreB =
+          b.match?.score ?? b.score;
+
+        if (scoreA !== scoreB) {
+          return scoreB - scoreA;
+        }
+
+        return b.id - a.id;
+      });
   }, [
-    profile,
+    analyzedJobs,
     searchKeyword,
     category,
     workType,
     minimumBudget,
   ]);
 
-  function handleSearch(
+  const handleSearchSubmit = (
     event: FormEvent<HTMLFormElement>
-  ) {
+  ) => {
     event.preventDefault();
 
-    setSearchKeyword(searchInput);
-  }
+    setSearchKeyword(
+      searchInput.trim()
+    );
+  };
 
-  function resetFilters() {
+  const resetFilters = () => {
     setSearchInput("");
     setSearchKeyword("");
     setCategory("전체");
     setWorkType("전체");
     setMinimumBudget(0);
-  }
+  };
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      {/* 헤더 */}
-      <header className="border-b border-slate-800 bg-slate-950/95">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
+      {/* HEADER */}
+      <header className="border-b border-slate-800 bg-slate-950/90">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <Link
             href="/"
             className="flex items-center gap-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-bold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-lg font-black">
               R
             </div>
 
             <div>
-              <div className="text-lg font-bold">
+              <div className="font-bold">
                 외주레이더
               </div>
 
-              <div className="text-xs text-slate-400">
-                AI 일거리 탐색 서비스
+              <div className="text-xs text-slate-500">
+                OJURADAR
               </div>
             </div>
           </Link>
 
           <Link
             href="/radar"
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
+            className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold transition hover:border-blue-500 hover:text-blue-300"
           >
-            내 레이더
+            내 레이더 설정
           </Link>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-5 py-10">
-        {/* 메인 소개 */}
+      <div className="mx-auto max-w-7xl px-6 py-12">
+        {/* HERO */}
         <section className="mb-10">
-          <div className="mb-3 text-sm font-semibold text-blue-400">
-            AI PROJECT MATCHING
+          <div className="mb-4 inline-flex rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-300">
+            📡 나에게 돈 되는 일거리 탐색
           </div>
 
-          <h1 className="max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
+          <h1 className="max-w-4xl text-4xl font-black leading-tight tracking-tight md:text-5xl">
             수많은 일거리 중
             <br />
-
             <span className="text-blue-400">
-              나에게 돈 되는 일만
-            </span>{" "}
-            찾아드립니다.
+              나에게 돈 되는 일
+            </span>
+            만 찾아드립니다.
           </h1>
 
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-400">
-            외주, 부업, 프로젝트를 일일이
-            찾아다니지 마세요.
-            <br className="hidden md:block" />
-            외주레이더가 내 능력과 시간,
-            희망수익을 분석해 가장 적합한 일을
-            추천합니다.
+            외주레이더가 프로젝트의 예산,
+            예상 작업시간, 내 기술 적합도를
+            분석해서 우선순위를 보여드립니다.
           </p>
         </section>
 
-        {/* 요약 */}
-        <section className="mb-8 grid gap-4 sm:grid-cols-3">
-          <SummaryCard
-            label="전체 수집 일거리"
-            value={jobs.length}
-            unit="건"
-          />
+        {/* SUMMARY */}
+        <section className="mb-8 grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div className="text-sm text-slate-500">
+              전체 수집 일거리
+            </div>
 
-          <SummaryCard
-            label="현재 검색 결과"
-            value={filteredJobs.length}
-            unit="건"
-            highlight
-          />
+            <div className="mt-2 text-3xl font-black">
+              {jobs.length}
+              <span className="ml-1 text-base font-medium text-slate-500">
+                건
+              </span>
+            </div>
+          </div>
 
-          <SummaryCard
-            label="내 레이더"
-            value={profile ? "ON" : "OFF"}
-          />
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div className="text-sm text-slate-500">
+              검색 결과
+            </div>
+
+            <div className="mt-2 text-3xl font-black text-blue-400">
+              {visibleJobs.length}
+              <span className="ml-1 text-base font-medium text-slate-500">
+                건
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div className="text-sm text-slate-500">
+              내 레이더
+            </div>
+
+            <div className="mt-2 text-lg font-bold">
+              {profile
+                ? "적용 중"
+                : "미설정"}
+            </div>
+
+            <div className="mt-1 text-xs text-slate-500">
+              {profile
+                ? `${profile.skills.length}개 기술 기준 추천`
+                : "레이더를 설정하면 맞춤 점수를 계산합니다."}
+            </div>
+          </div>
         </section>
 
-        {/* 검색 */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 md:p-6">
+        {/* SEARCH */}
+        <section className="mb-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
           <form
-            onSubmit={handleSearch}
+            onSubmit={
+              handleSearchSubmit
+            }
             className="flex flex-col gap-3 md:flex-row"
           >
             <input
-              type="text"
               value={searchInput}
               onChange={(event) =>
                 setSearchInput(
                   event.target.value
                 )
               }
-              placeholder="어떤 일을 찾고 있나요? 예: Java, 글쓰기, 영상편집"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-4 text-base outline-none placeholder:text-slate-500 focus:border-blue-500"
+              placeholder="기술, 업무, 출처 검색 (예: Java, 나라장터, 디자인)"
+              className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition placeholder:text-slate-600 focus:border-blue-500"
             />
 
             <button
               type="submit"
-              className="rounded-xl bg-blue-600 px-8 py-4 font-semibold transition hover:bg-blue-500"
+              className="rounded-xl bg-blue-600 px-7 py-3 font-semibold transition hover:bg-blue-500"
             >
-              공고 검색
+              검색
             </button>
           </form>
-
-          {/* 필터 */}
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {/* 분야 */}
-            <select
-              value={category}
-              onChange={(event) =>
-                setCategory(event.target.value)
-              }
-              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
-            >
-            {categoryOptions.map((value) => (
-                  <option
-                    key={value}
-                    value={value}
-                  >
-                    {value === "전체"
-                      ? "분야 전체"
-                      : value}
-                  </option>
-                )
-              )}
-            </select>
-
-            {/* 작업방식 */}
-            <select
-              value={workType}
-              onChange={(event) =>
-                setWorkType(
-                  event.target.value
-                )
-              }
-              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
-            >
-              <option value="전체">
-                작업방식 전체
-              </option>
-
-              <option value="원격">
-                원격
-              </option>
-
-              <option value="상주">
-                상주
-              </option>
-
-              <option value="혼합">
-                혼합
-              </option>
-            </select>
-
-            {/* 최소금액 */}
-            <select
-              value={minimumBudget}
-              onChange={(event) =>
-                setMinimumBudget(
-                  Number(event.target.value)
-                )
-              }
-              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-blue-500"
-            >
-              {BUDGET_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={option.value}
-                    value={option.value}
-                  >
-                    {option.label}
-                  </option>
-                )
-              )}
-            </select>
-
-            {/* 초기화 */}
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="rounded-xl border border-slate-700 px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-            >
-              검색조건 초기화
-            </button>
-          </div>
-
-          {/* 적용된 검색어 */}
-          {searchKeyword && (
-            <div className="mt-4 text-sm text-slate-400">
-              검색어{" "}
-              <strong className="text-blue-400">
-                &quot;{searchKeyword}&quot;
-              </strong>
-              에 대한 결과입니다.
-            </div>
-          )}
         </section>
 
-        {/* 추천 공고 */}
-        <section className="mt-10">
-          <div className="mb-5 flex items-end justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">
-                AI 추천 일거리
-              </h2>
+        {/* FILTER */}
+        <section className="mb-10 flex flex-wrap gap-3">
+          <select
+            value={category}
+            onChange={(event) =>
+              setCategory(
+                event.target.value
+              )
+            }
+            className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-blue-500"
+          >
+            {categoryOptions.map(
+              (value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value === "전체"
+                    ? "전체 카테고리"
+                    : value}
+                </option>
+              )
+            )}
+          </select>
 
-              <p className="mt-1 text-sm text-slate-400">
-                검색조건과 내 레이더를 함께
-                반영했습니다.
-              </p>
-            </div>
+          <select
+            value={workType}
+            onChange={(event) =>
+              setWorkType(
+                event.target.value
+              )
+            }
+            className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-blue-500"
+          >
+            {workTypeOptions.map(
+              (value) => (
+                <option
+                  key={value}
+                  value={value}
+                >
+                  {value === "전체"
+                    ? "전체 작업방식"
+                    : value}
+                </option>
+              )
+            )}
+          </select>
 
-            <div className="text-sm text-slate-500">
-              {filteredJobs.length}건
-            </div>
+          <select
+            value={minimumBudget}
+            onChange={(event) =>
+              setMinimumBudget(
+                Number(
+                  event.target.value
+                )
+              )
+            }
+            className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm outline-none focus:border-blue-500"
+          >
+            {BUDGET_OPTIONS.map(
+              (option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              )
+            )}
+          </select>
+
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-400 transition hover:border-slate-500 hover:text-white"
+          >
+            필터 초기화
+          </button>
+        </section>
+
+        {/* RESULT HEADER */}
+        <section className="mb-5 flex items-end justify-between">
+          <div>
+            <h2 className="text-2xl font-black">
+              추천 일거리
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              내 조건에 잘 맞는 순서로
+              보여드립니다.
+            </p>
           </div>
 
-          {filteredJobs.length > 0 ? (
-            <div className="grid gap-5 lg:grid-cols-3">
-              {filteredJobs.map((job) => {
-                const score =
-                  job.match?.score ??
-                  job.score;
+          <div className="text-sm text-slate-500">
+            {visibleJobs.length}건
+          </div>
+        </section>
 
-                return (
-                  <article
-                    key={job.id}
-                    className="rounded-2xl border border-slate-800 bg-slate-900 p-6 transition hover:-translate-y-1 hover:border-slate-700"
-                  >
-                    <div className="mb-5 flex items-start justify-between">
-                      <div>
-                        <div className="mb-2 text-xs text-slate-500">
-                          {job.category}
-                        </div>
+        {/* JOB LIST */}
+        {visibleJobs.length > 0 ? (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {visibleJobs.map((job) => {
+              const score =
+                job.match?.score ??
+                job.score;
 
-                        <span className="rounded-full bg-blue-500/10 px-3 py-1 text-sm font-bold text-blue-400">
-                          AI 추천 {score}점
+              const deadlineInfo =
+                getDeadlineInfo(
+                  job.deadline
+                );
+
+              return (
+                <article
+                  key={job.id}
+                  className="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/70 p-6 transition hover:-translate-y-1 hover:border-slate-700"
+                >
+                  {/* CARD TOP */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">
+                        {job.category}
+                      </span>
+
+                      {deadlineInfo && (
+                        <span
+                          className={
+                            deadlineInfo.expired
+                              ? "rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300"
+                              : "rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300"
+                          }
+                        >
+                          {
+                            deadlineInfo.label
+                          }
                         </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="text-xl text-slate-500 hover:text-white"
-                        aria-label="관심 공고"
-                      >
-                        ☆
-                      </button>
-                    </div>
-
-                    <h3 className="min-h-14 text-xl font-bold leading-7">
-                      {job.title}
-                    </h3>
-
-                    <div className="mt-5 space-y-3 border-y border-slate-800 py-5 text-sm">
-                      <JobInfoRow
-                        label="예산"
-                        value={job.budget}
-                      />
-
-                      <JobInfoRow
-                        label="예상 작업시간"
-                        value={
-                          job.estimatedTime
-                        }
-                      />
-
-                      <JobInfoRow
-                        label="예상 시급"
-                        value={
-                          job.hourlyRate
-                        }
-                        highlight
-                      />
-
-                      <JobInfoRow
-                        label="작업방식"
-                        value={job.workType}
-                      />
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {job.tags.map(
-                        (tag) => (
-                          <span
-                            key={tag}
-                            className={`rounded-md px-2.5 py-1 text-xs ${
-                              job.match?.matchedSkills.includes(
-                                tag
-                              )
-                                ? "bg-blue-500/15 text-blue-400"
-                                : "bg-slate-800 text-slate-300"
-                            }`}
-                          >
-                            {tag}
-                          </span>
-                        )
                       )}
                     </div>
 
+                    <span
+                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-bold ${getScoreStyle(
+                        score
+                      )}`}
+                    >
+                      AI 추천 {score}점
+                    </span>
+                  </div>
+
+                  {/* TITLE */}
+                  <h3 className="mt-5 text-xl font-bold leading-8">
+                    {job.title}
+                  </h3>
+
+                  <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-400">
+                    {job.summary}
+                  </p>
+
+                  {/* DATA */}
+                  <div className="mt-6 space-y-3 rounded-xl bg-slate-950/70 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">
+                        예산
+                      </span>
+
+                      <span className="text-right text-sm font-bold text-white">
+                        {job.budget}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">
+                        예상 작업시간
+                      </span>
+
+                      <span className="text-right text-sm font-semibold">
+                        {
+                          job.estimatedTime
+                        }
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">
+                        예상 시급
+                      </span>
+
+                      <span className="text-right text-sm font-semibold text-emerald-300">
+                        {job.hourlyRate}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-slate-500">
+                        작업방식
+                      </span>
+
+                      <span className="text-right text-sm font-semibold">
+                        {job.workType}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* TAGS */}
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {job.tags.map(
+                      (tag) => {
+                        const matched =
+                          job.match?.matchedSkills.includes(
+                            tag
+                          );
+
+                        return (
+                          <span
+                            key={tag}
+                            className={
+                              matched
+                                ? "rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-300"
+                                : "rounded-lg bg-slate-800 px-2.5 py-1 text-xs text-slate-400"
+                            }
+                          >
+                            {tag}
+                          </span>
+                        );
+                      }
+                    )}
+                  </div>
+
+                  {/* MATCH REASON */}
+                  {job.match &&
+                    job.match.reasons
+                      .length > 0 && (
+                      <div className="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                        <div className="text-xs font-bold text-emerald-300">
+                          왜 추천했나요?
+                        </div>
+
+                        <div className="mt-2 text-sm leading-6 text-slate-400">
+                          {
+                            job.match
+                              .reasons[0]
+                          }
+                        </div>
+                      </div>
+                    )}
+
+                  {/* 아래 버튼들을 카드 하단으로 */}
+                  <div className="mt-auto pt-6">
                     <Link
                       href={`/jobs/${job.id}`}
-                      className="mt-6 block w-full rounded-xl bg-slate-800 py-3 text-center font-semibold transition hover:bg-blue-600"
+                      className="block w-full rounded-xl bg-slate-800 py-3 text-center font-semibold transition hover:bg-blue-600"
                     >
                       상세 분석 보기
                     </Link>
 
+                    {job.sourceUrl && (
+                      <a
+                        href={
+                          job.sourceUrl
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 block w-full rounded-xl border border-blue-500/40 bg-blue-500/10 py-3 text-center font-semibold text-blue-300 transition hover:bg-blue-500/20"
+                      >
+                        원문 공고 보기 ↗
+                      </a>
+                    )}
+
                     <div className="mt-3 text-center text-xs text-slate-600">
                       출처: {job.source}
                     </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-slate-700 py-20 text-center">
-              <div className="text-xl font-bold">
-                조건에 맞는 일거리가
-                없습니다.
-              </div>
-
-              <p className="mt-3 text-sm text-slate-500">
-                검색어나 필터 조건을 조금
-                완화해보세요.
-              </p>
-
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="mt-6 rounded-xl bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-500"
-              >
-                검색조건 초기화
-              </button>
-            </div>
-          )}
-        </section>
-
-        {/* 설명 */}
-        <section className="mt-16 rounded-3xl border border-slate-800 bg-slate-900 p-7 md:p-10">
-          <div className="grid gap-8 md:grid-cols-2">
-            <div>
-              <div className="text-sm font-semibold text-blue-400">
-                WHY OJURADAR?
-              </div>
-
-              <h2 className="mt-3 text-2xl font-bold md:text-3xl">
-                공고를 보여주는 데서
-                <br />
-                끝나지 않습니다.
-              </h2>
-            </div>
-
-            <div className="space-y-3 text-slate-400">
-              <p>
-                ✓ 내가 실제로 할 수 있는 일인지
-                분석
-              </p>
-
-              <p>
-                ✓ 예상 작업시간과 예상 시급 계산
-              </p>
-
-              <p>
-                ✓ 일정·난이도·리스크까지 AI가
-                평가
-              </p>
-
-              <p>
-                ✓ 지원할 가치가 있는 공고만 추천
-              </p>
-            </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-        </section>
-      </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-700 py-20 text-center">
+            <div className="text-xl font-bold">
+              조건에 맞는 일거리가
+              없습니다.
+            </div>
 
-      <footer className="mt-16 border-t border-slate-800 py-8 text-center text-sm text-slate-600">
-        © 2026 외주레이더 · AI Project Matching
-        Service
-      </footer>
-    </main>
-  );
-}
+            <p className="mt-3 text-sm text-slate-500">
+              검색어나 필터 조건을 조금
+              완화해보세요.
+            </p>
 
-function SummaryCard({
-  label,
-  value,
-  unit,
-  highlight = false,
-}: {
-  label: string;
-  value: number | string;
-  unit?: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-      <div className="text-sm text-slate-400">
-        {label}
-      </div>
-
-      <div
-        className={`mt-2 text-3xl font-bold ${
-          highlight
-            ? "text-blue-400"
-            : ""
-        }`}
-      >
-        {value}
-
-        {unit && (
-          <span className="ml-1 text-base font-normal text-slate-500">
-            {unit}
-          </span>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="mt-6 rounded-xl bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-500"
+            >
+              검색조건 초기화
+            </button>
+          </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function JobInfoRow({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="flex justify-between gap-4">
-      <span className="text-slate-500">
-        {label}
-      </span>
-
-      <strong
-        className={
-          highlight
-            ? "text-emerald-400"
-            : ""
-        }
-      >
-        {value}
-      </strong>
-    </div>
+    </main>
   );
 }

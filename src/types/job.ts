@@ -4,6 +4,9 @@ export type Job = {
   category: string;
   source: string;
 
+  sourceUrl: string | null;
+  deadline: string | null;
+
   score: number;
 
   budget: string;

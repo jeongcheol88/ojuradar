@@ -103,26 +103,38 @@ export function calculateJobMatch(
    * 3. 작업시간 적합도
    * --------------------------------------------------
    */
-    if (job.estimatedHoursMax <= profile.maximumHours) {
+  if (
+    job.estimatedHoursMin <= 0 ||
+    job.estimatedHoursMax <= 0
+  ) {
+    timeScore = 0;
+
+    warnings.push(
+      "예상 작업시간 정보가 없어 시간 적합도는 계산하지 않았습니다."
+    );
+  } else if (
+    job.estimatedHoursMax <= profile.maximumHours
+  ) {
     timeScore = 20;
 
     reasons.push(
-        "설정한 최대 작업시간 안에 완료할 가능성이 높습니다."
+      "희망 최대 작업시간 이내입니다."
     );
-    } else if (
+  } else if (
     job.estimatedHoursMin <= profile.maximumHours
-    ) {
+  ) {
     timeScore = 10;
 
     warnings.push(
-        "작업 상황에 따라 설정한 최대 작업시간을 초과할 수 있습니다."
+      "예상 작업시간이 희망 범위를 초과할 수 있습니다."
     );
-    } else {
-    warnings.push(
-        "예상 작업시간이 설정한 최대 작업시간보다 깁니다."
-    );
-    }
+  } else {
+    timeScore = 0;
 
+    warnings.push(
+      "예상 작업시간이 희망 최대 작업시간보다 깁니다."
+    );
+  }
   /*
    * --------------------------------------------------
    * 4. 원격 적합도
