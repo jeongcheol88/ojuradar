@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import type { Job } from "@/data/jobs";
+import type { Job } from "@/types/job";
 
 import {
   calculateJobMatch,

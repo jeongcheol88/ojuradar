@@ -1,4 +1,4 @@
-import type { Job } from "@/data/jobs";
+import type { Job } from "@/types/job";
 
 export type RadarProfile = {
   skills: string[];

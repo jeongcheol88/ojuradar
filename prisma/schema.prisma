@@ -51,4 +51,5 @@ model Job {
   @@index([source])
   @@index([isActive])
   @@map("jobs")
+  @@unique([source, externalId])
 }

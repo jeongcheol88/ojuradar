@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 
-import { jobs } from "@/data/jobs";
-
 import JobDetailClient from "./JobDetailClient";
+
+import { prisma } from "@/lib/prisma";
+import { mapDatabaseJobToJob } from "@/lib/jobMapper";
 
 type JobDetailPageProps = {
   params: Promise<{
@@ -10,24 +11,28 @@ type JobDetailPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return jobs.map((job) => ({
-    id: String(job.id),
-  }));
-}
-
 export default async function JobDetailPage({
   params,
 }: JobDetailPageProps) {
   const { id } = await params;
 
-  const job = jobs.find(
-    (item) => item.id === Number(id)
-  );
+  const jobId = Number(id);
 
-  if (!job) {
+  if (!Number.isInteger(jobId)) {
     notFound();
   }
+
+  const dbJob = await prisma.job.findUnique({
+    where: {
+      id: jobId,
+    },
+  });
+
+  if (!dbJob || !dbJob.isActive) {
+    notFound();
+  }
+
+  const job = mapDatabaseJobToJob(dbJob);
 
   return <JobDetailClient job={job} />;
 }
