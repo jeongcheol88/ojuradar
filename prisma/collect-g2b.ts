@@ -28,9 +28,12 @@ async function main() {
     "📡 나라장터 실데이터 수집 시작"
   );
 
-  // 최근 3일 / 최대 100건
   const rawJobs =
-    await collectG2bJobs(3, 1, 100);
+    await collectG2bJobs(
+      3,
+      1,
+      100
+    );
 
   console.log(
     `📥 나라장터 원본 ${rawJobs.length}건`
@@ -39,12 +42,15 @@ async function main() {
   const jobs = rawJobs
     .map(mapG2bJob)
     .filter(
-      (job): job is NonNullable<typeof job> =>
-        job !== null
+      (
+        job
+      ): job is NonNullable<
+        typeof job
+      > => job !== null
     );
 
   console.log(
-    `🎯 외주레이더 관련 공고 ${jobs.length}건`
+    `🎯 외주레이더 관련공고 ${jobs.length}건`
   );
 
   let created = 0;
@@ -55,8 +61,11 @@ async function main() {
       await prisma.job.findUnique({
         where: {
           source_externalId: {
-            source: job.source,
-            externalId: job.externalId,
+            source:
+              job.source,
+
+            externalId:
+              job.externalId,
           },
         },
       });
@@ -64,24 +73,39 @@ async function main() {
     await prisma.job.upsert({
       where: {
         source_externalId: {
-          source: job.source,
-          externalId: job.externalId,
+          source:
+            job.source,
+
+          externalId:
+            job.externalId,
         },
       },
 
       create: {
-        source: job.source,
-        externalId: job.externalId,
+        source:
+          job.source,
+
+        externalId:
+          job.externalId,
+
         sourceUrl:
-          job.sourceUrl ?? null,
+          job.sourceUrl ??
+          null,
 
-        title: job.title,
-        category: job.category,
+        title:
+          job.title,
 
-        budgetMin: job.budgetMin,
-        budgetMax: job.budgetMax,
+        category:
+          job.category,
 
-        workType: job.workType,
+        budgetMin:
+          job.budgetMin,
+
+        budgetMax:
+          job.budgetMax,
+
+        workType:
+          job.workType,
 
         estimatedHoursMin:
           job.estimatedHoursMin,
@@ -89,30 +113,42 @@ async function main() {
         estimatedHoursMax:
           job.estimatedHoursMax,
 
-        tags: job.tags,
+        tags:
+          job.tags,
 
-        summary: job.summary,
+        summary:
+          job.summary,
 
         deadline:
-          job.deadline ?? null,
+          job.deadline ??
+          null,
 
         publishedAt:
-          job.publishedAt ?? null,
+          job.publishedAt ??
+          null,
 
         isActive: true,
       },
 
       update: {
         sourceUrl:
-          job.sourceUrl ?? null,
+          job.sourceUrl ??
+          null,
 
-        title: job.title,
-        category: job.category,
+        title:
+          job.title,
 
-        budgetMin: job.budgetMin,
-        budgetMax: job.budgetMax,
+        category:
+          job.category,
 
-        workType: job.workType,
+        budgetMin:
+          job.budgetMin,
+
+        budgetMax:
+          job.budgetMax,
+
+        workType:
+          job.workType,
 
         estimatedHoursMin:
           job.estimatedHoursMin,
@@ -120,15 +156,19 @@ async function main() {
         estimatedHoursMax:
           job.estimatedHoursMax,
 
-        tags: job.tags,
+        tags:
+          job.tags,
 
-        summary: job.summary,
+        summary:
+          job.summary,
 
         deadline:
-          job.deadline ?? null,
+          job.deadline ??
+          null,
 
         publishedAt:
-          job.publishedAt ?? null,
+          job.publishedAt ??
+          null,
 
         isActive: true,
       },
@@ -141,10 +181,42 @@ async function main() {
     }
   }
 
+  /*
+   * 마감 지난 나라장터 공고 OFF
+   */
+  const expiredResult =
+    await prisma.job.updateMany({
+      where: {
+        source: "나라장터",
+
+        isActive: true,
+
+        deadline: {
+          lt: new Date(),
+        },
+      },
+
+      data: {
+        isActive: false,
+      },
+    });
+
   console.log("");
-  console.log("✅ 나라장터 저장 완료");
-  console.log(`신규: ${created}건`);
-  console.log(`갱신: ${updated}건`);
+  console.log(
+    "✅ 나라장터 저장 완료"
+  );
+
+  console.log(
+    `신규: ${created}건`
+  );
+
+  console.log(
+    `갱신: ${updated}건`
+  );
+
+  console.log(
+    `마감 비활성화: ${expiredResult.count}건`
+  );
 }
 
 main()

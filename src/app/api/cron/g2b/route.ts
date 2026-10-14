@@ -8,10 +8,6 @@ import { mapG2bJob } from "@/lib/collectors/g2bMapper";
 export async function GET(
   request: Request
 ) {
-    
-  /*
-   * Vercel Cron 인증
-   */
   const authorization =
     request.headers.get("authorization");
 
@@ -60,10 +56,7 @@ export async function GET(
       );
 
     /*
-     * 이미 존재하는 공고를 한 번에 조회.
-     *
-     * 공고마다 findUnique를 호출하는 것보다
-     * DB 호출 수를 줄일 수 있음.
+     * 이미 존재하는 공고 확인
      */
     const externalIds =
       jobs.map(
@@ -105,6 +98,9 @@ export async function GET(
     let created = 0;
     let updated = 0;
 
+    /*
+     * 신규/기존 공고 저장
+     */
     for (const job of jobs) {
       await prisma.job.upsert({
         where: {
@@ -221,6 +217,31 @@ export async function GET(
       }
     }
 
+    /*
+     * 마감시간이 지난 나라장터 공고 비활성화
+     *
+     * deadline이 null인 공고는 건드리지 않는다.
+     */
+    const expiredResult =
+      await prisma.job.updateMany({
+        where: {
+          source: "나라장터",
+
+          isActive: true,
+
+          deadline: {
+            lt: new Date(),
+          },
+        },
+
+        data: {
+          isActive: false,
+        },
+      });
+
+    const deactivated =
+      expiredResult.count;
+
     console.log(
       "✅ [CRON] 나라장터 자동수집 완료"
     );
@@ -241,6 +262,10 @@ export async function GET(
       `갱신: ${updated}건`
     );
 
+    console.log(
+      `마감 비활성화: ${deactivated}건`
+    );
+
     return NextResponse.json({
       ok: true,
 
@@ -253,6 +278,8 @@ export async function GET(
       created,
 
       updated,
+
+      deactivated,
 
       executedAt:
         new Date().toISOString(),
