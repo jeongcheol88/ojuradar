@@ -1,3 +1,5 @@
+export const instant = false;
+
 import HomeClient from "./HomeClient";
 
 import { prisma } from "@/lib/prisma";
