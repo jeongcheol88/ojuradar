@@ -31,22 +31,29 @@ function numberValue(value: unknown): number {
     String(value ?? "").replace(/[^\d.-]/g, "")
   );
 
-  return Number.isFinite(parsed) ? parsed : 0;
+  return Number.isFinite(parsed)
+    ? parsed
+    : 0;
 }
 
 function formatKstDate(date: Date): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat(
+    "en-CA",
+    {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }
+  ).formatToParts(date);
 
   const get = (type: string) =>
-    parts.find((part) => part.type === type)?.value ?? "";
+    parts.find(
+      (part) => part.type === type
+    )?.value ?? "";
 
   return (
     get("year") +
@@ -57,12 +64,53 @@ function formatKstDate(date: Date): string {
   );
 }
 
+function buildG2bSourceUrl(
+  item: UnknownObject
+): string {
+  /*
+   * API가 내려주는 상세 URL이 있으면
+   * 그 값을 최우선으로 사용한다.
+   */
+  const apiUrl =
+    text(item.bidNtceDtlUrl) ||
+    text(item.bidNtceUrl);
+
+  if (apiUrl.startsWith("http")) {
+    return apiUrl;
+  }
+
+  /*
+   * 상세 URL이 없을 경우
+   * 공고번호/차수로 나라장터 링크를 구성한다.
+   */
+  const bidNoticeNo =
+    text(item.bidNtceNo);
+
+  const bidNoticeOrder =
+    text(item.bidNtceOrd) || "000";
+
+  if (!bidNoticeNo) {
+    return "";
+  }
+
+  return (
+    "https://www.g2b.go.kr/link/PNPE027_01/single/" +
+    `?bidPbancNo=${encodeURIComponent(
+      bidNoticeNo
+    )}` +
+    `&bidPbancOrd=${encodeURIComponent(
+      bidNoticeOrder
+    )}`
+  );
+}
+
 export async function collectG2bJobs(
   days = 3,
   pageNo = 1,
   numOfRows = 10
 ): Promise<G2bJob[]> {
-  const serviceKey = process.env.G2B_API_KEY;
+  const serviceKey =
+    process.env.G2B_API_KEY;
 
   if (!serviceKey) {
     throw new Error(
@@ -71,34 +119,46 @@ export async function collectG2bJobs(
   }
 
   const now = new Date();
+
   const start = new Date(
-    now.getTime() - days * 24 * 60 * 60 * 1000
+    now.getTime() -
+      days * 24 * 60 * 60 * 1000
   );
 
-  const params = new URLSearchParams({
-    serviceKey,
-    pageNo: String(pageNo),
-    numOfRows: String(numOfRows),
+  const params =
+    new URLSearchParams({
+      serviceKey,
 
-    // JSON 응답
-    type: "json",
+      pageNo: String(pageNo),
 
-    // 1 = 등록일시 기준
-    inqryDiv: "1",
+      numOfRows: String(
+        numOfRows
+      ),
 
-    inqryBgnDt: formatKstDate(start),
-    inqryEndDt: formatKstDate(now),
-  });
+      type: "json",
+
+      /*
+       * 등록일시 기준 조회
+       */
+      inqryDiv: "1",
+
+      inqryBgnDt:
+        formatKstDate(start),
+
+      inqryEndDt:
+        formatKstDate(now),
+    });
 
   const endpoint =
     "https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServc";
 
-  const response = await fetch(
-    `${endpoint}?${params.toString()}`,
-    {
-      cache: "no-store",
-    }
-  );
+  const response =
+    await fetch(
+      `${endpoint}?${params.toString()}`,
+      {
+        cache: "no-store",
+      }
+    );
 
   if (!response.ok) {
     throw new Error(
@@ -106,10 +166,12 @@ export async function collectG2bJobs(
     );
   }
 
-  const data = await response.json();
+  const data =
+    await response.json();
 
   const resultCode =
-    data?.response?.header?.resultCode;
+    data?.response?.header
+      ?.resultCode;
 
   if (
     resultCode !== "00" &&
@@ -118,22 +180,29 @@ export async function collectG2bJobs(
   ) {
     throw new Error(
       `나라장터 API 오류: ${resultCode} / ${
-        data?.response?.header?.resultMsg ?? "알 수 없는 오류"
+        data?.response?.header
+          ?.resultMsg ??
+        "알 수 없는 오류"
       }`
     );
   }
 
   const rawItems =
-    data?.response?.body?.items;
+    data?.response?.body
+      ?.items;
 
   let items: UnknownObject[] = [];
 
   if (Array.isArray(rawItems)) {
     items = rawItems;
-  } else if (Array.isArray(rawItems?.item)) {
+  } else if (
+    Array.isArray(rawItems?.item)
+  ) {
     items = rawItems.item;
   } else if (rawItems?.item) {
-    items = [rawItems.item];
+    items = [
+      rawItems.item,
+    ];
   }
 
   return items.map((item) => {
@@ -145,6 +214,7 @@ export async function collectG2bJobs(
 
     return {
       bidNoticeNo,
+
       bidNoticeOrder,
 
       title:
@@ -157,30 +227,35 @@ export async function collectG2bJobs(
         text(item.dminsttNm),
 
       contractMethod:
-        text(item.cntrctCnclsMthdNm),
+        text(
+          item.cntrctCnclsMthdNm
+        ),
 
       estimatedPrice:
-        numberValue(item.presmptPrce),
+        numberValue(
+          item.presmptPrce
+        ),
 
       allocatedBudget:
-        numberValue(item.asignBdgtAmt),
+        numberValue(
+          item.asignBdgtAmt
+        ),
 
       noticeDate:
         text(
           item.bidNtceDt ??
-          item.rgstDt
+            item.rgstDt
         ),
 
       bidCloseDate:
         text(
           item.bidClseDt ??
-          item.bidClseDate
+            item.bidClseDate
         ),
 
       sourceUrl:
-        text(
-          item.bidNtceDtlUrl ??
-          item.bidNtceUrl
+        buildG2bSourceUrl(
+          item
         ),
     };
   });
