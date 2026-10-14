@@ -16,12 +16,18 @@ import {
   type RadarProfile,
 } from "@/lib/matching";
 
+import {
+  calculateJobQuality,
+  type JobQualityResult,
+} from "@/lib/jobQuality";
+
 type HomeClientProps = {
   jobs: Job[];
 };
 
 type JobWithMatch = Job & {
   match: MatchResult | null;
+  quality: JobQualityResult;
 };
 
 const BUDGET_OPTIONS = [
@@ -159,6 +165,8 @@ export default function HomeClient({
   const [minimumBudget, setMinimumBudget] =
     useState(0);
 
+  const [showAllJobs, setShowAllJobs] =
+    useState(false);
   /*
    * 저장된 내 레이더 설정 불러오기
    */
@@ -194,15 +202,24 @@ export default function HomeClient({
   /*
    * DB 공고 + 레이더 매칭
    */
-  const analyzedJobs =
-    useMemo<JobWithMatch[]>(() => {
-      return jobs.map((job) => ({
-        ...job,
-        match: profile
-          ? calculateJobMatch(job, profile)
-          : null,
-      }));
-    }, [jobs, profile]);
+const analyzedJobs =
+  useMemo<JobWithMatch[]>(() => {
+    return jobs.map((job) => ({
+      ...job,
+
+      match: profile
+        ? calculateJobMatch(
+            job,
+            profile
+          )
+        : null,
+
+      quality:
+        calculateJobQuality(
+          job
+        ),
+    }));
+  }, [jobs, profile]);
 
   /*
    * 검색 / 필터 / 정렬
@@ -212,6 +229,9 @@ export default function HomeClient({
       searchKeyword.trim().toLowerCase();
 
     return analyzedJobs
+      /*
+      * 검색어
+      */
       .filter((job) => {
         if (!keyword) {
           return true;
@@ -232,29 +252,69 @@ export default function HomeClient({
           keyword
         );
       })
+
+      /*
+      * 카테고리
+      */
       .filter((job) => {
         if (category === "전체") {
           return true;
         }
 
-        return job.category === category;
+        return (
+          job.category === category
+        );
       })
+
+      /*
+      * 작업방식
+      */
       .filter((job) => {
         if (workType === "전체") {
           return true;
         }
 
-        return job.workType === workType;
+        return (
+          job.workType === workType
+        );
       })
+
+      /*
+      * 최소 예산
+      */
       .filter((job) => {
         if (minimumBudget === 0) {
           return true;
         }
 
         return (
-          job.budgetMax >= minimumBudget
+          job.budgetMax >=
+          minimumBudget
         );
       })
+
+      /*
+      * 외주 적합도가 너무 낮은 공고는
+      * 기본 화면에서 숨김.
+      *
+      * "모든 공고 보기"를 누르면
+      * 점수와 관계없이 표시.
+      */
+      .filter((job) => {
+        if (showAllJobs) {
+          return true;
+        }
+
+        return (
+          job.quality.score >= 40
+        );
+      })
+
+      /*
+      * 1순위: 내 레이더 점수
+      * 2순위: 외주 적합도
+      * 3순위: 최신 DB ID
+      */
       .sort((a, b) => {
         const scoreA =
           a.match?.score ?? a.score;
@@ -266,6 +326,16 @@ export default function HomeClient({
           return scoreB - scoreA;
         }
 
+        if (
+          a.quality.score !==
+          b.quality.score
+        ) {
+          return (
+            b.quality.score -
+            a.quality.score
+          );
+        }
+
         return b.id - a.id;
       });
   }, [
@@ -274,6 +344,7 @@ export default function HomeClient({
     category,
     workType,
     minimumBudget,
+    showAllJobs,
   ]);
 
   const handleSearchSubmit = (
@@ -292,6 +363,9 @@ export default function HomeClient({
     setCategory("전체");
     setWorkType("전체");
     setMinimumBudget(0);
+
+    // 기본 상태는 좋은 공고만 표시
+    setShowAllJobs(false);
   };
 
   return (
@@ -506,20 +580,41 @@ export default function HomeClient({
         </section>
 
         {/* RESULT HEADER */}
-        <section className="mb-5 flex items-end justify-between">
+        <section className="mb-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h2 className="text-2xl font-black">
               추천 일거리
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              내 조건에 잘 맞는 순서로
-              보여드립니다.
+              {showAllJobs
+                ? "필터 조건에 맞는 모든 공고를 보여드립니다."
+                : "외주 적합도 40점 이상 공고를 우선 보여드립니다."}
             </p>
           </div>
 
-          <div className="text-sm text-slate-500">
-            {visibleJobs.length}건
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-500">
+              {visibleJobs.length}건
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowAllJobs(
+                  (current) => !current
+                )
+              }
+              className={
+                showAllJobs
+                  ? "rounded-xl border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-300 transition hover:bg-blue-500/20"
+                  : "rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-blue-500 hover:text-blue-300"
+              }
+            >
+              {showAllJobs
+                ? "추천 공고만 보기"
+                : "모든 공고 보기"}
+            </button>
           </div>
         </section>
 
@@ -563,13 +658,34 @@ export default function HomeClient({
                       )}
                     </div>
 
-                    <span
-                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-bold ${getScoreStyle(
-                        score
-                      )}`}
-                    >
-                      AI 추천 {score}점
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <span
+                        className={
+                          profile
+                            ? `rounded-full border px-3 py-1 text-xs font-bold ${getScoreStyle(
+                                score
+                              )}`
+                            : "rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-bold text-slate-400"
+                        }
+                      >
+                        {profile
+                          ? `내 레이더 ${score}점`
+                          : "레이더 미설정"}
+                      </span>
+
+                      <span
+                        className={
+                          job.quality.score >= 75
+                            ? "rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300"
+                            : job.quality.score >= 55
+                              ? "rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-300"
+                              : "rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-bold text-slate-400"
+                        }
+                      >
+                        외주 적합도{" "}
+                        {job.quality.score}점
+                      </span>
+                    </div>
                   </div>
 
                   {/* TITLE */}
@@ -624,6 +740,16 @@ export default function HomeClient({
                         {job.workType}
                       </span>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm text-slate-500">
+                      입찰 난이도
+                    </span>
+
+                    <span className="text-right text-sm font-semibold">
+                      {job.quality.difficulty}
+                    </span>
                   </div>
 
                   {/* TAGS */}
