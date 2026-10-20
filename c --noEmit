@@ -1,0 +1,1172 @@
+[1mdiff --git a/src/app/jobs/[id]/JobDetailClient.tsx b/src/app/jobs/[id]/JobDetailClient.tsx[m
+[1mindex 4d26c48..b68ed35 100644[m
+[1m--- a/src/app/jobs/[id]/JobDetailClient.tsx[m
+[1m+++ b/src/app/jobs/[id]/JobDetailClient.tsx[m
+[36m@@ -95,7 +95,7 @@[m [mexport default function JobDetailClient({[m
+           </div>[m
+ [m
+           <div className="mt-3 inline-block rounded-full bg-blue-500/10 px-4 py-2 font-bold text-blue-400">[m
+[31m-            AI 추천 {score}점[m
+[32m+[m[32m            내 레이더 {score}점[m
+           </div>[m
+ [m
+           <h1 className="mt-5 text-3xl font-bold leading-tight md:text-5xl">[m
+[36m@@ -136,71 +136,146 @@[m [mexport default function JobDetailClient({[m
+             {/* AI 분석 */}[m
+             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">[m
+               <h2 className="text-xl font-bold">[m
+[31m-                외주레이더 AI 분석[m
+[32m+[m[32m                외주레이더 분석[m
+               </h2>[m
+[31m-[m
+               <p className="mt-4 leading-7 text-slate-400">[m
+                 {job.summary}[m
+               </p>[m
+             </section>[m
+ [m
+[31m-            {/* 추천 이유 */}[m
+[31m-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">[m
+[31m-              <h2 className="text-xl font-bold">[m
+[31m-                왜 추천했나요?[m
+[31m-              </h2>[m
+[32m+[m[32m          {/* 내 레이더 분석 */}[m
+[32m+[m[32m        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">[m
+[32m+[m[32m          <div>[m
+[32m+[m[32m            <div className="text-sm font-semibold text-blue-300">[m
+[32m+[m[32m              내 레이더 분석[m
+[32m+[m[32m            </div>[m
+ [m
+[31m-              <div className="mt-5 space-y-4">[m
+[31m-                {reasons.length > 0 ? ([m
+[31m-                  reasons.map((reason) => ([m
+[31m-                    <div[m
+[31m-                      key={reason}[m
+[31m-                      className="flex items-start gap-3 text-slate-300"[m
+[31m-                    >[m
+[31m-                      <span className="font-bold text-emerald-400">[m
+[31m-                        ✓[m
+[31m-                      </span>[m
+[32m+[m[32m            <h2 className="mt-1 text-xl font-black">[m
+[32m+[m[32m              왜 나에게 맞나요?[m
+[32m+[m[32m            </h2>[m
+ [m
+[31m-                      <span>{reason}</span>[m
+[31m-                    </div>[m
+[31m-                  ))[m
+[31m-                ) : ([m
+[31m-                  <div className="text-slate-500">[m
+[31m-                    현재 조건에서 특별한 추천[m
+[31m-                    요소가 없습니다.[m
+[31m-                  </div>[m
+[31m-                )}[m
+[32m+[m[32m            <p className="mt-2 text-sm leading-6 text-slate-500">[m
+[32m+[m[32m              등록한 기술과 공고의 업무 내용을 비교해[m
+[32m+[m[32m              추천 근거를 보여드립니다.[m
+[32m+[m[32m            </p>[m
+[32m+[m[32m          </div>[m
+[32m+[m
+[32m+[m[32m          {match &&[m
+[32m+[m[32m            match.matchedProfileSkills.length > 0 && ([m
+[32m+[m[32m              <div className="mt-6">[m
+[32m+[m[32m                <div className="text-sm font-bold text-slate-300">[m
+[32m+[m[32m                  연관된 내 기술[m
+[32m+[m[32m                </div>[m
+[32m+[m[41m                [m
+[32m+[m[32m                <div className="mt-1 text-xs text-slate-500">[m
+[32m+[m[32m                  {match.skillMatchLevel ===[m
+[32m+[m[32m                  "direct"[m
+[32m+[m[32m                    ? "공고 내용에서 등록 기술을 직접 확인했습니다."[m
+[32m+[m[32m                    : match.skillMatchLevel ===[m
+[32m+[m[32m                        "strong"[m
+[32m+[m[32m                      ? "등록 기술과 밀접한 업무 키워드를 확인했습니다."[m
+[32m+[m[32m                      : "세부 기술은 확인되지 않았지만 같은 기술 분야입니다."}[m
+[32m+[m[32m                </div>[m
+[32m+[m
+[32m+[m[32m                <div className="mt-3 flex flex-wrap gap-2">[m
+[32m+[m[32m                  {match.matchedProfileSkills.map([m
+[32m+[m[32m                    (skill) => ([m
+[32m+[m[32m                      <span[m
+[32m+[m[32m                        key={skill}[m
+[32m+[m[32m                        className={[m
+[32m+[m[32m                          match.skillMatchLevel ===[m
+[32m+[m[32m                          "direct"[m
+[32m+[m[32m                            ? "rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-300"[m
+[32m+[m[32m                            : match.skillMatchLevel ===[m
+[32m+[m[32m                                "strong"[m
+[32m+[m[32m                              ? "rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-300"[m
+[32m+[m[32m                              : "rounded-full border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-300"[m
+[32m+[m[32m                        }[m
+[32m+[m[32m                      >[m
+[32m+[m[32m                        {skill}[m
+[32m+[m[32m                        {" · "}[m
+[32m+[m[32m                        {match.skillMatchLevel ===[m
+[32m+[m[32m                        "direct"[m
+[32m+[m[32m                          ? "직접 일치"[m
+[32m+[m[32m                          : match.skillMatchLevel ===[m
+[32m+[m[32m                              "strong"[m
+[32m+[m[32m                            ? "강한 연관"[m
+[32m+[m[32m                            : "분야 연관"}[m
+[32m+[m[32m                      </span>[m
+[32m+[m[32m                    )[m
+[32m+[m[32m                  )}[m
+[32m+[m[32m                </div>[m
+               </div>[m
+[31m-            </section>[m
+[32m+[m[32m            )}[m
+ [m
+[31m-            {/* 감점 / 주의사항 */}[m
+[31m-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">[m
+[31m-              <h2 className="text-xl font-bold">[m
+[31m-                확인해야 할 조건[m
+[31m-              </h2>[m
+[32m+[m[32m          {match &&[m
+[32m+[m[32m            match.matchedJobKeywords.length > 0 && ([m
+[32m+[m[32m              <div className="mt-6">[m
+[32m+[m[32m                <div className="text-sm font-bold text-slate-300">[m
+[32m+[m[32m                  연관 업무[m
+[32m+[m[32m                </div>[m
+ [m
+[31m-              <div className="mt-5 space-y-4">[m
+[31m-                {warnings.length > 0 ? ([m
+[31m-                  warnings.map((warning) => ([m
+[31m-                    <div[m
+[31m-                      key={warning}[m
+[31m-                      className="flex items-start gap-3 text-slate-300"[m
+[31m-                    >[m
+[31m-                      <span className="font-bold text-amber-400">[m
+[31m-                        ![m
+[32m+[m[32m                <div className="mt-3 flex flex-wrap gap-2">[m
+[32m+[m[32m                  {match.matchedJobKeywords[m
+[32m+[m[32m                    .slice(0, 6)[m
+[32m+[m[32m                    .map((keyword) => ([m
+[32m+[m[32m                      <span[m
+[32m+[m[32m                        key={keyword}[m
+[32m+[m[32m                        className="rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-sm text-emerald-300"[m
+[32m+[m[32m                      >[m
+[32m+[m[32m                        {keyword}[m
+                       </span>[m
+[32m+[m[32m                    ))}[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m              </div>[m
+[32m+[m[32m            )}[m
+[32m+[m
+[32m+[m[32m          <div className="mt-6">[m
+[32m+[m[32m            <div className="text-sm font-bold text-emerald-300">[m
+[32m+[m[32m              추천 이유[m
+[32m+[m[32m            </div>[m
+ [m
+[31m-                      <span>{warning}</span>[m
+[31m-                    </div>[m
+[31m-                  ))[m
+[31m-                ) : ([m
+[31m-                  <div className="text-emerald-400">[m
+[31m-                    ✓ 현재 레이더 조건에서[m
+[31m-                    특별한 감점 요소가 없습니다.[m
+[32m+[m[32m            <div className="mt-3 space-y-2">[m
+[32m+[m[32m              {reasons.length > 0 ? ([m
+[32m+[m[32m                reasons.map((reason) => ([m
+[32m+[m[32m                  <div[m
+[32m+[m[32m                    key={reason}[m
+[32m+[m[32m                    className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm leading-6 text-slate-300"[m
+[32m+[m[32m                  >[m
+[32m+[m[32m                    ✓ {reason}[m
+                   </div>[m
+[31m-                )}[m
+[31m-              </div>[m
+[31m-            </section>[m
+[32m+[m[32m                ))[m
+[32m+[m[32m              ) : ([m
+[32m+[m[32m                <div className="text-sm text-slate-500">[m
+[32m+[m[32m                  현재 조건에서 특별한 추천 요소가 없습니다.[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m              )}[m
+[32m+[m[32m            </div>[m
+[32m+[m[32m          </div>[m
+[32m+[m
+[32m+[m[32m          <div className="mt-6">[m
+[32m+[m[32m            <div className="text-sm font-bold text-amber-300">[m
+[32m+[m[32m              확인할 점[m
+[32m+[m[32m            </div>[m
+[32m+[m
+[32m+[m[32m            <div className="mt-3 space-y-2">[m
+[32m+[m[32m              {warnings.length > 0 ? ([m
+[32m+[m[32m                warnings.map((warning) => ([m
+[32m+[m[32m                  <div[m
+[32m+[m[32m                    key={warning}[m
+[32m+[m[32m                    className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-slate-300"[m
+[32m+[m[32m                  >[m
+[32m+[m[32m                    ! {warning}[m
+[32m+[m[32m                  </div>[m
+[32m+[m[32m                ))[m
+[32m+[m[32m              ) : ([m
+[32m+[m[32m                <div className="text-sm text-emerald-400">[m
+[32m+[m[32m                  ✓ 현재 레이더 조건에서 특별한 감점 요소가 없습니다.[m
+[32m+[m[32m                </div>[m
+[32m+[m[32m              )}[m
+[32m+[m[32m            </div>[m
+[32m+[m[32m          </div>[m
+[32m+[m[32m        </section>[m
+ [m
+             {/* 기술 */}[m
+             <section>[m
+[36m@@ -241,7 +316,7 @@[m [mexport default function JobDetailClient({[m
+               </div>[m
+ [m
+               <div className="mt-1 text-sm text-slate-500">[m
+[31m-                AI 적합도 {score}점[m
+[32m+[m[32m                내 레이더 {score}점[m
+               </div>[m
+ [m
+               <div className="my-6 border-t border-slate-800" />[m
+[36m@@ -272,8 +347,8 @@[m [mexport default function JobDetailClient({[m
+                     max={10}[m
+                   />[m
+                 </div>[m
+[31m-              )}[m
+ [m
+[32m+[m[32m              )}[m
+               <div className="space-y-4 border-t border-slate-800 pt-6 text-sm">[m
+                 <div className="flex justify-between">[m
+                   <span className="text-slate-500">[m
+[36m@@ -312,12 +387,24 @@[m [mexport default function JobDetailClient({[m
+                 ☆ 관심 공고[m
+               </button>[m
+ [m
+[31m-              <button[m
+[31m-                disabled[m
+[31m-                className="mt-3 w-full cursor-not-allowed rounded-xl bg-slate-800 py-4 text-sm text-slate-500"[m
+[31m-              >[m
+[31m-                원문 연결 예정[m
+[31m-              </button>[m
+[32m+[m[32m              {job.sourceUrl ? ([m
+[32m+[m[32m                <a[m
+[32m+[m[32m                  href={job.sourceUrl}[m
+[32m+[m[32m                  target="_blank"[m
+[32m+[m[32m                  rel="noopener noreferrer"[m
+[32m+[m[32m                  className="mt-3 block w-full rounded-xl border border-slate-700 py-4 text-center text-sm font-semibold text-slate-300 transition hover:border-blue-500 hover:bg-slate-800 hover:text-blue-300"[m
+[32m+[m[32m                >[m
+[32m+[m[32m                  원문 공고 보기 ↗[m
+[32m+[m[32m                </a>[m
+[32m+[m[32m              ) : ([m
+[32m+[m[32m                <button[m
+[32m+[m[32m                  type="button"[m
+[32m+[m[32m                  disabled[m
+[32m+[m[32m                  className="mt-3 w-full cursor-not-allowed rounded-xl bg-slate-800 py-4 text-sm text-slate-500"[m
+[32m+[m[32m                >[m
+[32m+[m[32m                  원문 링크 없음[m
+[32m+[m[32m                </button>[m
+[32m+[m[32m              )}[m
+             </div>[m
+           </aside>[m
+         </div>[m
+[1mdiff --git a/src/lib/matching.ts b/src/lib/matching.ts[m
+[1mindex 152f69b..bef706b 100644[m
+[1m--- a/src/lib/matching.ts[m
+[1m+++ b/src/lib/matching.ts[m
+[36m@@ -1,12 +1,10 @@[m
+ import type { Job } from "@/types/job";[m
+ [m
+[31m-export type RadarProfile = {[m
+[31m-  skills: string[];[m
+[31m-  availability: string[];[m
+[31m-  minimumBudget: number;[m
+[31m-  maximumHours: number;[m
+[31m-  remoteOnly: boolean;[m
+[31m-};[m
+[32m+[m[32mexport type SkillMatchLevel =[m
+[32m+[m[32m  | "direct"[m
+[32m+[m[32m  | "strong"[m
+[32m+[m[32m  | "field"[m
+[32m+[m[32m  | "none";[m
+ [m
+ export type MatchResult = {[m
+   score: number;[m
+[36m@@ -17,155 +15,805 @@[m [mexport type MatchResult = {[m
+   remoteScore: number;[m
+ [m
+   matchedSkills: string[];[m
+[32m+[m[32m  matchedProfileSkills: string[];[m
+[32m+[m[32m  matchedJobKeywords: string[];[m
+[32m+[m
+[32m+[m[32m  skillMatchLevel: SkillMatchLevel;[m
+[32m+[m
+   reasons: string[];[m
+[31m-  [m
+   warnings: string[];[m
+ };[m
+ [m
+[31m-export function calculateJobMatch([m
+[32m+[m[32mtype SkillFamily = {[m
+[32m+[m[32m  profileKeywords: string[];[m
+[32m+[m[32m  jobKeywords: string[];[m
+[32m+[m[32m  categories: string[];[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mconst SKILL_FAMILIES: SkillFamily[] = [[m
+[32m+[m[32m  {[m
+[32m+[m[32m    profileKeywords: [[m
+[32m+[m[32m      "java",[m
+[32m+[m[32m      "spring",[m
+[32m+[m[32m      "spring boot",[m
+[32m+[m[32m      "springboot",[m
+[32m+[m[32m      "kotlin",[m
+[32m+[m[32m      "node",[m
+[32m+[m[32m      "node.js",[m
+[32m+[m[32m      "nestjs",[m
+[32m+[m[32m      "c#",[m
+[32m+[m[32m      ".net",[m
+[32m+[m[32m      "php",[m
+[32m+[m[32m      "django",[m
+[32m+[m[32m      "fastapi",[m
+[32m+[m[32m      "go",[m
+[32m+[m[32m      "golang",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    jobKeywords: [[m
+[32m+[m[32m      "백엔드",[m
+[32m+[m[32m      "서버",[m
+[32m+[m[32m      "api",[m
+[32m+[m[32m      "웹",[m
+[32m+[m[32m      "웹 전환",[m
+[32m+[m[32m      "웹서비스",[m
+[32m+[m[32m      "웹 서비스",[m
+[32m+[m[32m      "정보시스템",[m
+[32m+[m[32m      "시스템 구축",[m
+[32m+[m[32m      "소프트웨어",[m
+[32m+[m[32m      "sw",[m
+[32m+[m[32m      "응용프로그램",[m
+[32m+[m[32m      "서비스 개발",[m
+[32m+[m[32m      "플랫폼 구축",[m
+[32m+[m[32m      "플랫폼",[m
+[32m+[m[32m      "유지보수",[m
+[32m+[m[32m      "기능 개선",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    categories: [[m
+[32m+[m[32m      "개발 · IT",[m
+[32m+[m[32m    ],[m
+[32m+[m[32m  },[m
+[32m+[m
+[32m+[m[32m  {[m
+[32m+[m[32m    profileKeywords: [[m
+[32m+[m[32m      "oracle",[m
+[32m+[m[32m      "mysql",[m
+[32m+[m[32m      "mariadb",[m
+[32m+[m[32m      "postgresql",[m
+[32m+[m[32m      "postgres",[m
+[32m+[m[32m      "sql",[m
+[32m+[m[32m      "db",[m
+[32m+[m[32m      "database",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    jobKeywords: [[m
+[32m+[m[32m      "데이터베이스",[m
+[32m+[m[32m      "database",[m
+[32m+[m[32m      "db",[m
+[32m+[m[32m      "데이터",[m
+[32m+[m[32m      "정보시스템",[m
+[32m+[m[32m      "시스템",[m
+[32m+[m[32m      "마이그레이션",[m
+[32m+[m[32m      "이관",[m
+[32m+[m[32m      "유지보수",[m
+[32m+[m[32m      "플랫폼",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    categories: [[m
+[32m+[m[32m      "개발 · IT",[m
+[32m+[m[32m    ],[m
+[32m+[m[32m  },[m
+[32m+[m
+[32m+[m[32m  {[m
+[32m+[m[32m    profileKeywords: [[m
+[32m+[m[32m      "javascript",[m
+[32m+[m[32m      "typescript",[m
+[32m+[m[32m      "react",[m
+[32m+[m[32m      "next.js",[m
+[32m+[m[32m      "nextjs",[m
+[32m+[m[32m      "vue",[m
+[32m+[m[32m      "angular",[m
+[32m+[m[32m      "html",[m
+[32m+[m[32m      "css",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    jobKeywords: [[m
+[32m+[m[32m      "프론트엔드",[m
+[32m+[m[32m      "웹",[m
+[32m+[m[32m      "웹사이트",[m
+[32m+[m[32m      "홈페이지",[m
+[32m+[m[32m      "ui",[m
+[32m+[m[32m      "웹서비스",[m
+[32m+[m[32m      "웹 서비스",[m
+[32m+[m[32m      "플랫폼",[m
+[32m+[m[32m      "기능 개선",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    categories: [[m
+[32m+[m[32m      "개발 · IT",[m
+[32m+[m[32m    ],[m
+[32m+[m[32m  },[m
+[32m+[m
+[32m+[m[32m  {[m
+[32m+[m[32m    profileKeywords: [[m
+[32m+[m[32m      "python",[m
+[32m+[m[32m      "ai",[m
+[32m+[m[32m      "인공지능",[m
+[32m+[m[32m      "machine learning",[m
+[32m+[m[32m      "머신러닝",[m
+[32m+[m[32m      "pytorch",[m
+[32m+[m[32m      "tensorflow",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    jobKeywords: [[m
+[32m+[m[32m      "ai",[m
+[32m+[m[32m      "인공지능",[m
+[32m+[m[32m      "머신러닝",[m
+[32m+[m[32m      "데이터 분석",[m
+[32m+[m[32m      "빅데이터",[m
+[32m+[m[32m      "모델 개발",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    categories: [[m
+[32m+[m[32m      "개발 · IT",[m
+[32m+[m[32m    ],[m
+[32m+[m[32m  },[m
+[32m+[m
+[32m+[m[32m  {[m
+[32m+[m[32m    profileKeywords: [[m
+[32m+[m[32m      "figma",[m
+[32m+[m[32m      "photoshop",[m
+[32m+[m[32m      "illustrator",[m
+[32m+[m[32m      "ui",[m
+[32m+[m[32m      "ux",[m
+[32m+[m[32m      "디자인",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    jobKeywords: [[m
+[32m+[m[32m      "디자인",[m
+[32m+[m[32m      "브랜딩",[m
+[32m+[m[32m      "브랜드",[m
+[32m+[m[32m      "ui",[m
+[32m+[m[32m      "ux",[m
+[32m+[m[32m      "웹디자인",[m
+[32m+[m[32m      "편집디자인",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    categories: [[m
+[32m+[m[32m      "디자인",[m
+[32m+[m[32m    ],[m
+[32m+[m[32m  },[m
+[32m+[m
+[32m+[m[32m  {[m
+[32m+[m[32m    profileKeywords: [[m
+[32m+[m[32m      "premiere",[m
+[32m+[m[32m      "after effects",[m
+[32m+[m[32m      "영상",[m
+[32m+[m[32m      "유튜브",[m
+[32m+[m[32m      "마케팅",[m
+[32m+[m[32m      "sns",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    jobKeywords: [[m
+[32m+[m[32m      "영상",[m
+[32m+[m[32m      "유튜브",[m
+[32m+[m[32m      "sns",[m
+[32m+[m[32m      "마케팅",[m
+[32m+[m[32m      "광고",[m
+[32m+[m[32m      "홍보",[m
+[32m+[m[32m      "콘텐츠 제작",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    categories: [[m
+[32m+[m[32m      "영상 · 마케팅",[m
+[32m+[m[32m    ],[m
+[32m+[m[32m  },[m
+[32m+[m
+[32m+[m[32m  {[m
+[32m+[m[32m    profileKeywords: [[m
+[32m+[m[32m      "글쓰기",[m
+[32m+[m[32m      "작가",[m
+[32m+[m[32m      "에디터",[m
+[32m+[m[32m      "번역",[m
+[32m+[m[32m      "카피라이팅",[m
+[32m+[m[32m      "콘텐츠",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    jobKeywords: [[m
+[32m+[m[32m      "원고",[m
+[32m+[m[32m      "집필",[m
+[32m+[m[32m      "번역",[m
+[32m+[m[32m      "교정",[m
+[32m+[m[32m      "교열",[m
+[32m+[m[32m      "뉴스레터",[m
+[32m+[m[32m      "콘텐츠 원고",[m
+[32m+[m[32m    ],[m
+[32m+[m
+[32m+[m[32m    categories: [[m
+[32m+[m[32m      "글쓰기 · 콘텐츠",[m
+[32m+[m[32m    ],[m
+[32m+[m[32m  },[m
+[32m+[m[32m];[m
+[32m+[m
+[32m+[m[32mtype SkillMatchResult = {[m
+[32m+[m[32m  score: number;[m
+[32m+[m
+[32m+[m[32m  matchedSkills: string[];[m
+[32m+[m[32m  matchedProfileSkills: string[];[m
+[32m+[m[32m  matchedJobKeywords: string[];[m
+[32m+[m
+[32m+[m[32m  skillMatchLevel: SkillMatchLevel;[m
+[32m+[m
+[32m+[m[32m  reasons: string[];[m
+[32m+[m[32m};[m
+[32m+[m
+[32m+[m[32mfunction normalize([m
+[32m+[m[32m  value: string[m
+[32m+[m[32m) {[m
+[32m+[m[32m  return value[m
+[32m+[m[32m    .trim()[m
+[32m+[m[32m    .toLowerCase();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction buildJobText([m
+[32m+[m[32m  job: Job[m
+[32m+[m[32m) {[m
+[32m+[m[32m  return [[m
+[32m+[m[32m    job.title,[m
+[32m+[m[32m    job.category,[m
+[32m+[m[32m    job.summary,[m
+[32m+[m[32m    job.workType,[m
+[32m+[m[32m    ...job.tags,[m
+[32m+[m[32m  ][m
+[32m+[m[32m    .join(" ")[m
+[32m+[m[32m    .toLowerCase();[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mfunction calculateSkillMatch([m
+   job: Job,[m
+   profile: RadarProfile[m
+[31m-): MatchResult {[m
+[32m+[m[32m): SkillMatchResult {[m
+[32m+[m[32m  const reasons: string[] = [];[m
+[32m+[m
+[32m+[m[32m  const jobText =[m
+[32m+[m[32m    buildJobText(job);[m
+[32m+[m
+[32m+[m[32m  const normalizedSkills =[m
+[32m+[m[32m    profile.skills[m
+[32m+[m[32m      .map(normalize)[m
+[32m+[m[32m      .filter(Boolean);[m
+[32m+[m
+   /*[m
+[31m-   * 외주레이더 매칭점수 v0.1[m
+[31m-   *[m
+[31m-   * 기술 적합도 : 50점[m
+[31m-   * 금액 적합도 : 20점[m
+[31m-   * 시간 적합도 : 20점[m
+[31m-   * 원격 적합도 : 10점[m
+[31m-   *[m
+[31m-   * 총점         : 100점[m
+[32m+[m[32m   * 1. 기술명이 공고에 직접 등장[m
+    */[m
+[32m+[m[32m  const directSkills =[m
+[32m+[m[32m    profile.skills.filter([m
+[32m+[m[32m      (skill) =>[m
+[32m+[m[32m        jobText.includes([m
+[32m+[m[32m          normalize(skill)[m
+[32m+[m[32m        )[m
+[32m+[m[32m    );[m
+ [m
+[31m-  let skillScore = 0;[m
+[31m-  let budgetScore = 0;[m
+[31m-  let timeScore = 0;[m
+[31m-  let remoteScore = 0;[m
+[32m+[m[32m  if (directSkills.length > 0) {[m
+[32m+[m[32m    const matchedTags =[m
+[32m+[m[32m      job.tags.filter([m
+[32m+[m[32m        (tag) =>[m
+[32m+[m[32m          normalizedSkills.some([m
+[32m+[m[32m            (skill) =>[m
+[32m+[m[32m              normalize(tag).includes([m
+[32m+[m[32m                skill[m
+[32m+[m[32m              ) ||[m
+[32m+[m[32m              skill.includes([m
+[32m+[m[32m                normalize(tag)[m
+[32m+[m[32m              )[m
+[32m+[m[32m          )[m
+[32m+[m[32m      );[m
+ [m
+[31m-  const reasons: string[] = [];[m
+[31m-  const warnings: string[] = [];[m
+[32m+[m[32m    reasons.push([m
+[32m+[m[32m      `${directSkills[m
+[32m+[m[32m        .slice(0, 3)[m
+[32m+[m[32m        .join(", ")} 기술이 공고에 직접 나타납니다.`[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  return {[m
+[32m+[m[32m    score: 50,[m
+[32m+[m
+[32m+[m[32m    matchedSkills:[m
+[32m+[m[32m      matchedTags.length > 0[m
+[32m+[m[32m        ? matchedTags[m
+[32m+[m[32m        : directSkills,[m
+[32m+[m
+[32m+[m[32m    matchedProfileSkills:[m
+[32m+[m[32m      directSkills,[m
+[32m+[m
+[32m+[m[32m    matchedJobKeywords:[m
+[32m+[m[32m      directSkills,[m
+[32m+[m
+[32m+[m[32m    skillMatchLevel:[m
+[32m+[m[32m      "direct",[m
+[32m+[m
+[32m+[m[32m    reasons,[m
+[32m+[m[32m  };[m
+[32m+[m[32m  }[m
+ [m
+   /*[m
+[31m-   * --------------------------------------------------[m
+[31m-   * 1. 기술 적합도[m
+[31m-   * --------------------------------------------------[m
+[32m+[m[32m   * 2. 내 기술과 연결되는 기술군[m
+    */[m
+[31m-  const matchedSkills = job.tags.filter((tag) =>[m
+[31m-    profile.skills.some([m
+[31m-      (skill) =>[m
+[31m-        skill.toLowerCase() === tag.toLowerCase()[m
+[31m-    )[m
+[31m-  );[m
+[32m+[m[32m  const matchedFamilies =[m
+[32m+[m[32m    SKILL_FAMILIES.filter([m
+[32m+[m[32m      (family) =>[m
+[32m+[m[32m        family.profileKeywords.some([m
+[32m+[m[32m          (keyword) =>[m
+[32m+[m[32m            normalizedSkills.some([m
+[32m+[m[32m              (skill) =>[m
+[32m+[m[32m                skill.includes([m
+[32m+[m[32m                  keyword[m
+[32m+[m[32m                ) ||[m
+[32m+[m[32m                keyword.includes([m
+[32m+[m[32m                  skill[m
+[32m+[m[32m                )[m
+[32m+[m[32m            )[m
+[32m+[m[32m        )[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  /*[m
+[32m+[m[32m   * 실제 공고에 관련 업무가 존재하는[m
+[32m+[m[32m   * 기술군만 남김[m
+[32m+[m[32m   */[m
+[32m+[m[32m  const activeFamilies =[m
+[32m+[m[32m    matchedFamilies.filter([m
+[32m+[m[32m      (family) =>[m
+[32m+[m[32m        family.jobKeywords.some([m
+[32m+[m[32m          (keyword) =>[m
+[32m+[m[32m            jobText.includes([m
+[32m+[m[32m              normalize(keyword)[m
+[32m+[m[32m            )[m
+[32m+[m[32m        )[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  /*[m
+[32m+[m[32m   * 실제 연관된 내 기술[m
+[32m+[m[32m   */[m
+[32m+[m[32m  const matchedProfileSkills =[m
+[32m+[m[32m    profile.skills.filter([m
+[32m+[m[32m      (profileSkill) => {[m
+[32m+[m[32m        const skill =[m
+[32m+[m[32m          normalize([m
+[32m+[m[32m            profileSkill[m
+[32m+[m[32m          );[m
+[32m+[m
+[32m+[m[32m        return activeFamilies.some([m
+[32m+[m[32m          (family) =>[m
+[32m+[m[32m            family.profileKeywords.some([m
+[32m+[m[32m              (keyword) =>[m
+[32m+[m[32m                skill.includes([m
+[32m+[m[32m                  normalize(keyword)[m
+[32m+[m[32m                ) ||[m
+[32m+[m[32m                normalize([m
+[32m+[m[32m                  keyword[m
+[32m+[m[32m                ).includes([m
+[32m+[m[32m                  skill[m
+[32m+[m[32m                )[m
+[32m+[m[32m            )[m
+[32m+[m[32m        );[m
+[32m+[m[32m      }[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  /*[m
+[32m+[m[32m   * 공고에서 발견된 업무 키워드[m
+[32m+[m[32m   */[m
+[32m+[m[32m  const relatedJobKeywords =[m
+[32m+[m[32m    Array.from([m
+[32m+[m[32m      new Set([m
+[32m+[m[32m        activeFamilies.flatMap([m
+[32m+[m[32m          (family) =>[m
+[32m+[m[32m            family.jobKeywords[m
+[32m+[m[32m        )[m
+[32m+[m[32m      )[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  const matchedJobKeywords =[m
+[32m+[m[32m    relatedJobKeywords.filter([m
+[32m+[m[32m      (keyword) =>[m
+[32m+[m[32m        jobText.includes([m
+[32m+[m[32m          normalize(keyword)[m
+[32m+[m[32m        )[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  const strongKeywords = [[m
+[32m+[m[32m    "백엔드",[m
+[32m+[m[32m    "api",[m
+[32m+[m[32m    "웹 전환",[m
+[32m+[m[32m    "웹서비스",[m
+[32m+[m[32m    "웹 서비스",[m
+[32m+[m[32m    "정보시스템",[m
+[32m+[m[32m    "시스템 구축",[m
+[32m+[m[32m    "소프트웨어",[m
+[32m+[m[32m    "sw",[m
+[32m+[m[32m    "응용프로그램",[m
+[32m+[m[32m    "서비스 개발",[m
+[32m+[m[32m    "데이터베이스",[m
+[32m+[m[32m    "database",[m
+[32m+[m[32m    "db",[m
+[32m+[m[32m    "마이그레이션",[m
+[32m+[m[32m    "이관",[m
+[32m+[m[32m    "유지보수",[m
+[32m+[m[32m    "기능 개선",[m
+[32m+[m[32m  ];[m
+[32m+[m
+[32m+[m[32m  const mediumKeywords = [[m
+[32m+[m[32m    "웹",[m
+[32m+[m[32m    "서버",[m
+[32m+[m[32m    "데이터",[m
+[32m+[m[32m    "플랫폼 구축",[m
+[32m+[m[32m    "플랫폼",[m
+[32m+[m[32m    "클라우드",[m
+[32m+[m[32m    "시스템",[m
+[32m+[m[32m  ];[m
+[32m+[m
+[32m+[m[32m  const strongMatches =[m
+[32m+[m[32m    matchedJobKeywords.filter([m
+[32m+[m[32m      (keyword) =>[m
+[32m+[m[32m        strongKeywords.some([m
+[32m+[m[32m          (strong) =>[m
+[32m+[m[32m            normalize([m
+[32m+[m[32m              keyword[m
+[32m+[m[32m            ).includes([m
+[32m+[m[32m              normalize(strong)[m
+[32m+[m[32m            ) ||[m
+[32m+[m[32m            normalize([m
+[32m+[m[32m              strong[m
+[32m+[m[32m            ).includes([m
+[32m+[m[32m              normalize(keyword)[m
+[32m+[m[32m            )[m
+[32m+[m[32m        )[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  const mediumMatches =[m
+[32m+[m[32m    matchedJobKeywords.filter([m
+[32m+[m[32m      (keyword) =>[m
+[32m+[m[32m        mediumKeywords.some([m
+[32m+[m[32m          (medium) =>[m
+[32m+[m[32m            normalize([m
+[32m+[m[32m              keyword[m
+[32m+[m[32m            ).includes([m
+[32m+[m[32m              normalize(medium)[m
+[32m+[m[32m            ) ||[m
+[32m+[m[32m            normalize([m
+[32m+[m[32m              medium[m
+[32m+[m[32m            ).includes([m
+[32m+[m[32m              normalize(keyword)[m
+[32m+[m[32m            )[m
+[32m+[m[32m        )[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  const matchedTags =[m
+[32m+[m[32m    job.tags.filter([m
+[32m+[m[32m      (tag) =>[m
+[32m+[m[32m        matchedJobKeywords.some([m
+[32m+[m[32m          (keyword) =>[m
+[32m+[m[32m            normalize(tag).includes([m
+[32m+[m[32m              normalize(keyword)[m
+[32m+[m[32m            ) ||[m
+[32m+[m[32m            normalize([m
+[32m+[m[32m              keyword[m
+[32m+[m[32m            ).includes([m
+[32m+[m[32m              normalize(tag)[m
+[32m+[m[32m            )[m
+[32m+[m[32m        )[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  /*[m
+[32m+[m[32m   * 강한 연관[m
+[32m+[m[32m   */[m
+[32m+[m[32m  if (strongMatches.length > 0) {[m
+[32m+[m[32m    reasons.push([m
+[32m+[m[32m      `${matchedProfileSkills[m
+[32m+[m[32m        .slice(0, 3)[m
+[32m+[m[32m        .join(", ")} 기술과 연관된 업무(${strongMatches[m
+[32m+[m[32m        .slice(0, 3)[m
+[32m+[m[32m        .join(", ")})입니다.`[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m    return {[m
+[32m+[m[32m      score: 40,[m
+[32m+[m
+[32m+[m[32m      matchedSkills:[m
+[32m+[m[32m        matchedTags.length > 0[m
+[32m+[m[32m          ? matchedTags[m
+[32m+[m[32m          : strongMatches.slice([m
+[32m+[m[32m              0,[m
+[32m+[m[32m              3[m
+[32m+[m[32m            ),[m
+[32m+[m
+[32m+[m[32m      matchedProfileSkills,[m
+ [m
+[31m-  if (job.tags.length > 0) {[m
+[31m-    const skillRatio =[m
+[31m-      matchedSkills.length / job.tags.length;[m
+[32m+[m[32m      matchedJobKeywords:[m
+[32m+[m[32m        strongMatches,[m
+ [m
+[31m-    skillScore = Math.round(skillRatio * 50);[m
+[32m+[m[32m      skillMatchLevel:[m
+[32m+[m[32m        "strong",[m
+[32m+[m
+[32m+[m[32m      reasons,[m
+[32m+[m[32m    };[m
+   }[m
+ [m
+[31m-    if (matchedSkills.length > 0) {[m
+[32m+[m[32m  /*[m
+[32m+[m[32m   * 중간 연관[m
+[32m+[m[32m   */[m
+[32m+[m[32m  if (mediumMatches.length > 0) {[m
+     reasons.push([m
+[31m-        `${matchedSkills.join(", ")} 기술이 공고와 일치합니다.`[m
+[32m+[m[32m      `${matchedProfileSkills[m
+[32m+[m[32m        .slice(0, 3)[m
+[32m+[m[32m        .join(", ")} 기술과 연관 가능성이 있는 업무(${mediumMatches[m
+[32m+[m[32m        .slice(0, 3)[m
+[32m+[m[32m        .join(", ")})입니다.`[m
+     );[m
+[31m-    } else {[m
+[31m-    warnings.push([m
+[31m-        "내 레이더에 등록된 업무와 직접 일치하는 기술이 없습니다."[m
+[32m+[m
+[32m+[m[32m    return {[m
+[32m+[m[32m      score: 30,[m
+[32m+[m
+[32m+[m[32m      matchedSkills:[m
+[32m+[m[32m        matchedTags.length > 0[m
+[32m+[m[32m          ? matchedTags[m
+[32m+[m[32m          : mediumMatches.slice([m
+[32m+[m[32m              0,[m
+[32m+[m[32m              3[m
+[32m+[m[32m            ),[m
+[32m+[m
+[32m+[m[32m      matchedProfileSkills,[m
+[32m+[m
+[32m+[m[32m      matchedJobKeywords:[m
+[32m+[m[32m        mediumMatches,[m
+[32m+[m
+[32m+[m[32m      skillMatchLevel:[m
+[32m+[m[32m        "field",[m
+[32m+[m
+[32m+[m[32m      reasons,[m
+[32m+[m[32m    };[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  /*[m
+[32m+[m[32m   * 같은 분야 카테고리[m
+[32m+[m[32m   */[m
+[32m+[m[32m  const relatedCategories =[m
+[32m+[m[32m    Array.from([m
+[32m+[m[32m      new Set([m
+[32m+[m[32m        matchedFamilies.flatMap([m
+[32m+[m[32m          (family) =>[m
+[32m+[m[32m            family.categories[m
+[32m+[m[32m        )[m
+[32m+[m[32m      )[m
+     );[m
+[31m-    }[m
+[32m+[m
+[32m+[m[32m  if ([m
+[32m+[m[32m    relatedCategories.includes([m
+[32m+[m[32m      job.category[m
+[32m+[m[32m    )[m
+[32m+[m[32m  ) {[m
+[32m+[m[32m    const categorySkills =[m
+[32m+[m[32m      profile.skills.filter([m
+[32m+[m[32m        (profileSkill) => {[m
+[32m+[m[32m          const skill =[m
+[32m+[m[32m            normalize([m
+[32m+[m[32m              profileSkill[m
+[32m+[m[32m            );[m
+[32m+[m
+[32m+[m[32m          return matchedFamilies.some([m
+[32m+[m[32m            (family) =>[m
+[32m+[m[32m              family.profileKeywords.some([m
+[32m+[m[32m                (keyword) =>[m
+[32m+[m[32m                  skill.includes([m
+[32m+[m[32m                    normalize(keyword)[m
+[32m+[m[32m                  ) ||[m
+[32m+[m[32m                  normalize([m
+[32m+[m[32m                    keyword[m
+[32m+[m[32m                  ).includes([m
+[32m+[m[32m                    skill[m
+[32m+[m[32m                  )[m
+[32m+[m[32m              )[m
+[32m+[m[32m          );[m
+[32m+[m[32m        }[m
+[32m+[m[32m      );[m
+[32m+[m
+[32m+[m[32m    reasons.push([m
+[32m+[m[32m      "구체적인 기술스택은 확인되지 않지만 내 기술 분야와 같은 카테고리입니다."[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m    return {[m
+[32m+[m[32m      score: 15,[m
+[32m+[m[32m      matchedSkills: [],[m
+[32m+[m
+[32m+[m[32m      matchedProfileSkills:[m
+[32m+[m[32m        categorySkills,[m
+[32m+[m
+[32m+[m[32m      matchedJobKeywords: [],[m
+[32m+[m
+[32m+[m[32m      skillMatchLevel:[m
+[32m+[m[32m        "field",[m
+[32m+[m
+[32m+[m[32m      reasons,[m
+[32m+[m[32m    };[m
+[32m+[m[32m  }[m
+[32m+[m
+[32m+[m[32m  /*[m
+[32m+[m[32m   * 연관 없음[m
+[32m+[m[32m   */[m
+[32m+[m[32m    return {[m
+[32m+[m[32m      score: 0,[m
+[32m+[m[32m      matchedSkills: [],[m
+[32m+[m[32m      matchedProfileSkills: [],[m
+[32m+[m[32m      matchedJobKeywords: [],[m
+[32m+[m
+[32m+[m[32m      skillMatchLevel:[m
+[32m+[m[32m        "none",[m
+[32m+[m
+[32m+[m[32m      reasons,[m
+[32m+[m[32m    };[m[41m    [m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mexport function calculateJobMatch([m
+[32m+[m[32m  job: Job,[m
+[32m+[m[32m  profile: RadarProfile[m
+[32m+[m[32m): MatchResult {[m
+[32m+[m[32m  const reasons: string[] = [];[m
+[32m+[m[32m  const warnings: string[] = [];[m
+[32m+[m
+   /*[m
+[31m-   * --------------------------------------------------[m
+[31m-   * 2. 금액 적합도[m
+[31m-   * --------------------------------------------------[m
+[32m+[m[32m   * 기술 적합도[m
+[32m+[m[32m   * 최대 50점[m
+    */[m
+[31m-    if (job.budgetMax >= profile.minimumBudget) {[m
+[32m+[m[32m  const skillResult =[m
+[32m+[m[32m    calculateSkillMatch([m
+[32m+[m[32m      job,[m
+[32m+[m[32m      profile[m
+[32m+[m[32m    );[m
+[32m+[m
+[32m+[m[32m  const skillScore =[m
+[32m+[m[32m    skillResult.score;[m
+[32m+[m
+[32m+[m[32m  reasons.push([m
+[32m+[m[32m    ...skillResult.reasons[m
+[32m+[m[32m  );[m
+[32m+[m
+[32m+[m[32m  /*[m
+[32m+[m[32m   * 예산 적합도[m
+[32m+[m[32m   * 최대 20점[m
+[32m+[m[32m   */[m
+[32m+[m[32m  let budgetScore = 0;[m
+[32m+[m
+[32m+[m[32m  if ([m
+[32m+[m[32m    job.budgetMax >=[m
+[32m+[m[32m    profile.minimumBudget[m
+[32m+[m[32m  ) {[m
+     budgetScore = 20;[m
+ [m
+     reasons.push([m
+[31m-        "희망 최소금액 이상의 프로젝트입니다."[m
+[32m+[m[32m      "희망 최소금액 이상의 프로젝트입니다."[m
+     );[m
+[31m-    } else if ([m
+[31m-    job.budgetMax >= profile.minimumBudget * 0.8[m
+[31m-    ) {[m
+[32m+[m[32m  } else if ([m
+[32m+[m[32m    job.budgetMax >=[m
+[32m+[m[32m    profile.minimumBudget * 0.75[m
+[32m+[m[32m  ) {[m
+     budgetScore = 10;[m
+ [m
+     warnings.push([m
+[31m-        "희망 최소금액보다 다소 낮습니다."[m
+[32m+[m[32m      "희망 최소금액보다 조금 낮은 프로젝트입니다."[m
+     );[m
+[31m-    } else {[m
+[32m+[m[32m  } else {[m
+     warnings.push([m
+[31m-        "희망 최소금액보다 낮은 프로젝트입니다."[m
+[32m+[m[32m      "희망 최소금액보다 예산이 낮습니다."[m
+     );[m
+[31m-    }[m
+[32m+[m[32m  }[m
+ [m
+   /*[m
+[31m-   * --------------------------------------------------[m
+[31m-   * 3. 작업시간 적합도[m
+[31m-   * --------------------------------------------------[m
+[32m+[m[32m   * 시간 적합도[m
+[32m+[m[32m   * 최대 20점[m
+    */[m
+[32m+[m[32m  let timeScore = 0;[m
+[32m+[m
+   if ([m
+     job.estimatedHoursMin <= 0 ||[m
+     job.estimatedHoursMax <= 0[m
+   ) {[m
+[31m-    timeScore = 0;[m
+[31m-[m
+     warnings.push([m
+       "예상 작업시간 정보가 없어 시간 적합도는 계산하지 않았습니다."[m
+     );[m
+   } else if ([m
+[31m-    job.estimatedHoursMax <= profile.maximumHours[m
+[32m+[m[32m    job.estimatedHoursMax <=[m
+[32m+[m[32m    profile.maximumHours[m
+   ) {[m
+     timeScore = 20;[m
+ [m
+     reasons.push([m
+[31m-      "희망 최대 작업시간 이내입니다."[m
+[32m+[m[32m      "희망 작업시간 안에 완료 가능한 프로젝트입니다."[m
+     );[m
+   } else if ([m
+[31m-    job.estimatedHoursMin <= profile.maximumHours[m
+[32m+[m[32m    job.estimatedHoursMin <=[m
+[32m+[m[32m    profile.maximumHours[m
+   ) {[m
+     timeScore = 10;[m
+ [m
+     warnings.push([m
+[31m-      "예상 작업시간이 희망 범위를 초과할 수 있습니다."[m
+[32m+[m[32m      "작업시간에 따라 희망 시간을 초과할 수 있습니다."[m
+     );[m
+   } else {[m
+[31m-    timeScore = 0;[m
+[31m-[m
+     warnings.push([m
+[31m-      "예상 작업시간이 희망 최대 작업시간보다 깁니다."[m
+[32m+[m[32m      "예상 작업시간이 희망 시간을 초과합니다."[m
+     );[m
+   }[m
+[32m+[m
+   /*[m
+[31m-   * --------------------------------------------------[m
+[31m-   * 4. 원격 적합도[m
+[31m-   * --------------------------------------------------[m
+[32m+[m[32m   * 작업방식 적합도[m
+[32m+[m[32m   * 최대 10점[m
+    */[m
+[31m-    if (!profile.remoteOnly) {[m
+[31m-    remoteScore = 10;[m
+[31m-    } else if (job.workType === "원격") {[m
+[32m+[m[32m  let remoteScore = 0;[m
+[32m+[m
+[32m+[m[32m  if (!profile.remoteOnly) {[m
+     remoteScore = 10;[m
+[32m+[m[32m  } else {[m
+[32m+[m[32m    const workText = [[m
+[32m+[m[32m      job.workType,[m
+[32m+[m[32m      job.title,[m
+[32m+[m[32m      job.summary,[m
+[32m+[m[32m    ][m
+[32m+[m[32m      .join(" ")[m
+[32m+[m[32m      .toLowerCase();[m
+[32m+[m
+[32m+[m[32m    if ([m
+[32m+[m[32m      workText.includes([m
+[32m+[m[32m        "원격"[m
+[32m+[m[32m      ) ||[m
+[32m+[m[32m      workText.includes([m
+[32m+[m[32m        "재택"[m
+[32m+[m[32m      )[m
+[32m+[m[32m    ) {[m
+[32m+[m[32m      remoteScore = 10;[m
+ [m
+[31m-    reasons.push("원격 작업이 가능합니다.");[m
+[32m+[m[32m      reasons.push([m
+[32m+[m[32m        "원격으로 진행 가능한 프로젝트입니다."[m
+[32m+[m[32m      );[m
+     } else {[m
+[31m-    warnings.push([m
+[31m-        "원격 전용 조건과 맞지 않는 프로젝트입니다."[m
+[31m-    );[m
+[32m+[m[32m      warnings.push([m
+[32m+[m[32m        "원격 가능 여부를 공고에서 확인해야 합니다."[m
+[32m+[m[32m      );[m
+     }[m
+[32m+[m[32m  }[m
+ [m
+   const score =[m
+[31m-    skillScore +[m
+[31m-    budgetScore +[m
+[31m-    timeScore +[m
+[31m-    remoteScore;[m
+[32m+[m[32m    Math.max([m
+[32m+[m[32m      0,[m
+[32m+[m[32m      Math.min([m
+[32m+[m[32m        100,[m
+[32m+[m[32m        skillScore +[m
+[32m+[m[32m          budgetScore +[m
+[32m+[m[32m          timeScore +[m
+[32m+[m[32m          remoteScore[m
+[32m+[m[32m      )[m
+[32m+[m[32m    );[m
+ [m
+     return {[m
+[31m-    score,[m
+[31m-    skillScore,[m
+[31m-    budgetScore,[m
+[31m-    timeScore,[m
+[31m-    remoteScore,[m
+[31m-    matchedSkills,[m
+[31m-    reasons,[m
+[31m-    warnings,[m
+[32m+[m[32m      score,[m
+[32m+[m
+[32m+[m[32m      skillScore,[m
+[32m+[m[32m      budgetScore,[m
+[32m+[m[32m      timeScore,[m
+[32m+[m[32m      remoteScore,[m
+[32m+[m
+[32m+[m[32m      matchedSkills:[m
+[32m+[m[32m        skillResult.matchedSkills,[m
+[32m+[m
+[32m+[m[32m      matchedProfileSkills:[m
+[32m+[m[32m        skillResult.matchedProfileSkills,[m
+[32m+[m
+[32m+[m[32m      matchedJobKeywords:[m
+[32m+[m[32m        skillResult.matchedJobKeywords,[m
+[32m+[m
+[32m+[m[32m      skillMatchLevel:[m
+[32m+[m[32m        skillResult.skillMatchLevel,[m
+[32m+[m
+[32m+[m[32m      reasons,[m
+[32m+[m[32m      warnings,[m
+     };[m
+ }[m
+\ No newline at end of file[m

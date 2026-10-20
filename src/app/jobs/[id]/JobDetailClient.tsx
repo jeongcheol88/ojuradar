@@ -95,7 +95,7 @@ export default function JobDetailClient({
           </div>
 
           <div className="mt-3 inline-block rounded-full bg-blue-500/10 px-4 py-2 font-bold text-blue-400">
-            AI 추천 {score}점
+            내 레이더 {score}점
           </div>
 
           <h1 className="mt-5 text-3xl font-bold leading-tight md:text-5xl">
@@ -136,71 +136,146 @@ export default function JobDetailClient({
             {/* AI 분석 */}
             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">
               <h2 className="text-xl font-bold">
-                외주레이더 AI 분석
+                외주레이더 분석
               </h2>
-
               <p className="mt-4 leading-7 text-slate-400">
                 {job.summary}
               </p>
             </section>
 
-            {/* 추천 이유 */}
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">
-              <h2 className="text-xl font-bold">
-                왜 추천했나요?
-              </h2>
+          {/* 내 레이더 분석 */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">
+          <div>
+            <div className="text-sm font-semibold text-blue-300">
+              내 레이더 분석
+            </div>
 
-              <div className="mt-5 space-y-4">
-                {reasons.length > 0 ? (
-                  reasons.map((reason) => (
-                    <div
-                      key={reason}
-                      className="flex items-start gap-3 text-slate-300"
-                    >
-                      <span className="font-bold text-emerald-400">
-                        ✓
+            <h2 className="mt-1 text-xl font-black">
+              왜 나에게 맞나요?
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              등록한 기술과 공고의 업무 내용을 비교해
+              추천 근거를 보여드립니다.
+            </p>
+          </div>
+
+          {match &&
+            match.matchedProfileSkills.length > 0 && (
+              <div className="mt-6">
+                <div className="text-sm font-bold text-slate-300">
+                  연관된 내 기술
+                </div>
+
+                <div className="mt-1 text-xs text-slate-500">
+                  {match.skillMatchLevel ===
+                  "direct"
+                    ? "공고 내용에서 등록 기술을 직접 확인했습니다."
+                    : match.skillMatchLevel ===
+                        "strong"
+                      ? "등록 기술과 밀접한 업무 키워드를 확인했습니다."
+                      : "세부 기술은 확인되지 않았지만 같은 기술 분야입니다."}
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {match.matchedProfileSkills.map(
+                    (skill) => (
+                      <span
+                        key={skill}
+                        className={
+                          match.skillMatchLevel ===
+                          "direct"
+                            ? "rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-sm font-semibold text-emerald-300"
+                            : match.skillMatchLevel ===
+                                "strong"
+                              ? "rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-sm font-semibold text-blue-300"
+                              : "rounded-full border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-300"
+                        }
+                      >
+                        {skill}
+                        {" · "}
+                        {match.skillMatchLevel ===
+                        "direct"
+                          ? "직접 일치"
+                          : match.skillMatchLevel ===
+                              "strong"
+                            ? "강한 연관"
+                            : "분야 연관"}
                       </span>
-
-                      <span>{reason}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-slate-500">
-                    현재 조건에서 특별한 추천
-                    요소가 없습니다.
-                  </div>
-                )}
+                    )
+                  )}
+                </div>
               </div>
-            </section>
+            )}
 
-            {/* 감점 / 주의사항 */}
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 md:p-8">
-              <h2 className="text-xl font-bold">
-                확인해야 할 조건
-              </h2>
+          {match &&
+            match.matchedJobKeywords.length > 0 && (
+              <div className="mt-6">
+                <div className="text-sm font-bold text-slate-300">
+                  연관 업무
+                </div>
 
-              <div className="mt-5 space-y-4">
-                {warnings.length > 0 ? (
-                  warnings.map((warning) => (
-                    <div
-                      key={warning}
-                      className="flex items-start gap-3 text-slate-300"
-                    >
-                      <span className="font-bold text-amber-400">
-                        !
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {match.matchedJobKeywords
+                    .slice(0, 6)
+                    .map((keyword) => (
+                      <span
+                        key={keyword}
+                        className="rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-sm text-emerald-300"
+                      >
+                        {keyword}
                       </span>
-
-                      <span>{warning}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-emerald-400">
-                    ✓ 현재 레이더 조건에서
-                    특별한 감점 요소가 없습니다.
-                  </div>
-                )}
+                    ))}
+                </div>
               </div>
-            </section>
+            )}
+
+          <div className="mt-6">
+            <div className="text-sm font-bold text-emerald-300">
+              추천 이유
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {reasons.length > 0 ? (
+                reasons.map((reason) => (
+                  <div
+                    key={reason}
+                    className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm leading-6 text-slate-300"
+                  >
+                    ✓ {reason}
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-slate-500">
+                  현재 조건에서 특별한 추천 요소가 없습니다.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="text-sm font-bold text-amber-300">
+              확인할 점
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {warnings.length > 0 ? (
+                warnings.map((warning) => (
+                  <div
+                    key={warning}
+                    className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-slate-300"
+                  >
+                    ! {warning}
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-emerald-400">
+                  ✓ 현재 레이더 조건에서 특별한 감점 요소가 없습니다.
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
 
             {/* 기술 */}
             <section>
@@ -241,7 +316,7 @@ export default function JobDetailClient({
               </div>
 
               <div className="mt-1 text-sm text-slate-500">
-                AI 적합도 {score}점
+                내 레이더 {score}점
               </div>
 
               <div className="my-6 border-t border-slate-800" />
@@ -272,8 +347,8 @@ export default function JobDetailClient({
                     max={10}
                   />
                 </div>
-              )}
 
+              )}
               <div className="space-y-4 border-t border-slate-800 pt-6 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-500">
@@ -312,12 +387,24 @@ export default function JobDetailClient({
                 ☆ 관심 공고
               </button>
 
-              <button
-                disabled
-                className="mt-3 w-full cursor-not-allowed rounded-xl bg-slate-800 py-4 text-sm text-slate-500"
-              >
-                원문 연결 예정
-              </button>
+              {job.sourceUrl ? (
+                <a
+                  href={job.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 block w-full rounded-xl border border-slate-700 py-4 text-center text-sm font-semibold text-slate-300 transition hover:border-blue-500 hover:bg-slate-800 hover:text-blue-300"
+                >
+                  원문 공고 보기 ↗
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="mt-3 w-full cursor-not-allowed rounded-xl bg-slate-800 py-4 text-sm text-slate-500"
+                >
+                  원문 링크 없음
+                </button>
+              )}
             </div>
           </aside>
         </div>
